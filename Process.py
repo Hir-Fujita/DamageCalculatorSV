@@ -240,3 +240,6 @@ class ImageGenerator:
             draw.text((62, 29), "LOCK",fill="white", stroke_width=2, stroke_fill="black", font=font)
         return ImageTk.PhotoImage(image)
 
+    # @classmethod
+    # def create_battle_button(self, )
+

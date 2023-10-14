@@ -560,7 +560,7 @@ class DamageCalculator:
             self.add(MOVE, "じゅうでん強化", 8192)
 
         if self.attacker.move_flag:
-            if self.move_name in ["じだんだ", "しっぺがえし", "ダメおし","ゆきなだれ","アクロバット", "うっぷんばらし"]:
+            if self.move_name in ["じだんだ", "しっぺがえし", "ダメおし", "ゆきなだれ", "アクロバット", "うっぷんばらし"]:
                 self.move_power = self.move_power *2
                 self.log.append(f"{self.move_name}: 効果発動")
             if self.move_name == "はたきおとす":

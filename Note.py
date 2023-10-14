@@ -382,14 +382,32 @@ class Page3:
         return sum(result)
 
 class Page4:
+    """
+    シングルバトル
+    """
     def __init__(self, parent, manager: Application.Manager):
         self.manager = manager
-        a = tk.Label(parent, text="a")
-        a.pack()
+        left_frame = tk.Frame(parent)
+        left_frame.pack(side=tk.LEFT)
+
+        right_frame = tk.Frame(parent)
+        right_frame.pack(side=tk.RIGHT)
 
 class Page5:
+    """
+    ダブルバトル
+    """
     def __init__(self, parent, manager: Application.Manager):
         self.manager = manager
+        left_frame = tk.Frame(parent)
+        left_frame.pack(side=tk.LEFT)
+
+        right_frame = tk.Frame(parent)
+        right_frame.pack(side=tk.RIGHT)
+
+        top_frame = tk.Frame(parent)
+        top_frame.pack()
+
         a = tk.Label(parent, text="a")
         a.pack()
 
