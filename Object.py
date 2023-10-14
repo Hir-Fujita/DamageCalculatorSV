@@ -212,11 +212,6 @@ class PokeDetail(Poke):
             move_flag_variable: tk.BooleanVar,
             ability_flag_variable: tk.BooleanVar,
             bad_stat_variable: tk.StringVar,
-            a_wall_variable: tk.BooleanVar,
-            c_wall_variable: tk.BooleanVar,
-            wind_variable: tk.BooleanVar,
-            help_variable: tk.BooleanVar,
-            crit_variable: tk.BooleanVar,
             hp_now_variable: tk.IntVar
         ):
         super().config(
@@ -235,11 +230,6 @@ class PokeDetail(Poke):
         self.move_flag_variable = move_flag_variable
         self.ability_flag_bariable = ability_flag_variable
         self.bad_stat_variable = bad_stat_variable
-        self.a_wall_variable = a_wall_variable
-        self.c_wall_variable = c_wall_variable
-        self.wind_variable = wind_variable
-        self.help_variable = help_variable
-        self.crit_variable = crit_variable
         self.hp_now_variable = hp_now_variable
 
     def re_init(self, data: D.PokeData=None):
@@ -265,11 +255,6 @@ class PokeDetail(Poke):
         self.move_flag = self.move_flag_variable.get()
         self.bad_stat = self.bad_stat_variable.get()
         self.ability_flag = self.ability_flag_bariable.get()
-        self.a_wall = self.a_wall_variable.get()
-        self.c_wall = self.c_wall_variable.get()
-        self.wind = self.wind_variable.get()
-        self.help = self.help_variable.get()
-        self.crit = self.crit_variable.get()
 
     def copy(self):
         dic ={
@@ -315,6 +300,34 @@ class PokeDetail(Poke):
         print(f"rank_a:{self.rank_list[0]}\trank_b:{self.rank_list[1]}\trank_c:{self.rank_list[2]}\trank_d:{self.rank_list[3]}\trank_s:{self.rank_list[4]}")
         print(f"ability_flag:{self.ability_flag}\tterastal_flag:{self.terastal_flag}\tbad_stat:{self.bad_stat}\tmove_flag:{self.move_flag}")
         print(f"")
+
+class PlayerField:
+    def __init__(self):
+        self.a_wall: bool = False
+        self.c_wall: bool = False
+        self.wind: bool = False
+        self.help: bool = False
+        self.crit: bool = False
+
+    def config(self,
+            a_wall_variable: tk.BooleanVar,
+            c_wall_variable: tk.BooleanVar,
+            wind_variable: tk.BooleanVar,
+            help_variable: tk.BooleanVar,
+            crit_variable: tk.BooleanVar
+        ):
+        self.a_wall_variable = a_wall_variable
+        self.c_wall_variable = c_wall_variable
+        self.wind_variable = wind_variable
+        self.help_variable = help_variable
+        self.crit_variable = crit_variable
+
+    def update(self):
+        self.a_wall = self.a_wall_variable.get()
+        self.c_wall = self.c_wall_variable.get()
+        self.wind = self.wind_variable.get()
+        self.help = self.help_variable.get()
+        self.crit = self.crit_variable.get()
 
 class Field:
     def __init__(self):

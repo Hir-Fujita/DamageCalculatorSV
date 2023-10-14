@@ -56,7 +56,6 @@ class Application(tk.Frame):
         self.page_5 = DoubleDamageCalculatorNote(note, self.menu_widget, self.manager)
         self.page_6 = StatusCalculatorNote(note, self.menu_widget)
         self.page_7 = TestNote(note, self.menu_widget)
-        # self.page_8 = TestNote(note, self.menu_widget)
 
 class Manager:
     def __init__(self):

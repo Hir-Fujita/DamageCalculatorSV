@@ -184,11 +184,6 @@ class ImageGenerator:
         color_max, _ = hp_color(max_dmg)
         min_dmg = round((hp - min) / hp * 100, ratio)
         _, color_min = hp_color(min_dmg)
-        # if now:
-        #     max_dmg = round((now - max) / now * 100, ratio)
-        #     min_dmg = round((now - min) / now * 100, ratio)
-        #     color_max, _ = hp_color(max_dmg)
-        #     _, color_min = hp_color(min_dmg)
         if min_dmg > 0:
             draw.rectangle((width, width, min_dmg *ratio-1, size[1]+width-1), fill=color_min)
         if max_dmg > 0:

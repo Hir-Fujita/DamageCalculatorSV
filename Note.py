@@ -192,12 +192,14 @@ class Page3:
         left_frame = tk.Frame(frame)
         left_frame.pack(side=tk.LEFT, anchor=tk.W)
         self.left = Wid.StatusWidgetManagerPlus(Obj.PokeDetail())
-        self.create(left_frame, self.left, tk.LEFT)
+        self.left_field = Wid.PlayerFieldManager(Obj.PlayerField())
+        self.create(left_frame, self.left, self.left_field, tk.LEFT)
 
         right_frame = tk.Frame(frame)
         right_frame.pack(side=tk.RIGHT, anchor=tk.E)
         self.right = Wid.StatusWidgetManagerPlus(Obj.PokeDetail())
-        self.create(right_frame, self.right, tk.RIGHT)
+        self.right_field = Wid.PlayerFieldManager(Obj.PlayerField())
+        self.create(right_frame, self.right, self.right_field, tk.RIGHT)
 
         self.manager = {
             tk.LEFT: self.left,
@@ -228,7 +230,7 @@ class Page3:
         self.right.result_widget.create(result_frame)
         self.right.result_widget.pack(side=tk.LEFT, padx=2)
 
-    def create(self, frame, manager: Wid.StatusWidgetManagerPlus, side):
+    def create(self, frame, manager: Wid.StatusWidgetManagerPlus, field: Wid.PlayerFieldManager, side):
         out_frame = tk.Frame(frame)
         out_frame.pack(side=side, padx=5)
         manager.button_widget.create(out_frame, side, self.change)
@@ -280,16 +282,16 @@ class Page3:
                 manager.rank_widgets[index-1].grid(row=5, column=index+1, padx=1, pady=2)
         situation_frame = tk.Frame(frame_3)
         situation_frame.pack(side=side)
-        manager.a_wall_widget.create(situation_frame)
-        manager.a_wall_widget.pack(padx=10, pady=1)
-        manager.c_wall_widget.create(situation_frame)
-        manager.c_wall_widget.pack(padx=10, pady=1)
-        manager.wind_widget.create(situation_frame)
-        manager.wind_widget.pack(padx=10, pady=1)
-        manager.help_widget.create(situation_frame)
-        manager.help_widget.pack(padx=10, pady=1)
-        manager.crit_widget.create(situation_frame)
-        manager.crit_widget.pack(padx=10, pady=1)
+        field.a_wall_widget.create(situation_frame)
+        field.a_wall_widget.pack(padx=10, pady=1)
+        field.c_wall_widget.create(situation_frame)
+        field.c_wall_widget.pack(padx=10, pady=1)
+        field.wind_widget.create(situation_frame)
+        field.wind_widget.pack(padx=10, pady=1)
+        field.help_widget.create(situation_frame)
+        field.help_widget.pack(padx=10, pady=1)
+        field.crit_widget.create(situation_frame)
+        field.crit_widget.pack(padx=10, pady=1)
         manager.move_flag_widget.create(situation_frame)
         manager.move_flag_widget.pack(padx=10, pady=1)
 
@@ -327,12 +329,16 @@ class Page3:
         result = self.lock_calc(side)
         if side == tk.LEFT:
             attacker = self.left.poke
+            attacker_field = self.left_field
             target = self.right.poke
+            target_field = self.right_field
             widget = self.right.result_widget
             not_side = tk.RIGHT
         else:
             attacker = self.right.poke
+            attacker_field = self.right_field
             target = self.left.poke
+            target_field = self.left_field
             widget = self.left.result_widget
             not_side = tk.LEFT
         if attacker.name and target.name and attacker.move_list[move_index]:
@@ -343,7 +349,7 @@ class Page3:
             else:
                 before_hp = target.status_list[0].value_now
                 target.status_list[0].set_now(before_hp - result)
-                calculator = Calc.DamageCalculator(attacker, target, self.field_manager.field_data, move_index)
+                calculator = Calc.DamageCalculator(attacker, attacker_field.player, target, target_field.player, self.field_manager.field_data, move_index)
                 calculator.calculation()
                 widget.update(calculator)
                 target.status_list[0].set_now(before_hp)

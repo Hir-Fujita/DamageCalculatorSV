@@ -48,9 +48,18 @@ def fixed_num(hp: int, result: "list[int]") -> (int, int, str):
     return 0, 0, "確定"
 
 class DamageCalculator:
-    def __init__(self, attacker: Obj.PokeDetail, target: Obj.PokeDetail, field: Obj.Field, move_index: int):
+    def __init__(
+            self,
+            attacker: Obj.PokeDetail,
+            attacker_field: Obj.PlayerField,
+            target: Obj.PokeDetail,
+            target_field: Obj.PlayerField,
+            field: Obj.Field,
+            move_index: int):
         self.attacker = attacker
+        self.attacker_field = attacker_field
         self.target = target
+        self.target_field = target_field
         self.field = field
         self.move = D.MOVEDATA.find(attacker.move_list[move_index], "name")
 
@@ -63,8 +72,8 @@ class DamageCalculator:
 
         self.attacker_type = [D.POKEDATA.find(self.attacker.name, "name", "type1"), D.POKEDATA.find(self.attacker.name, "name", "type2")]
         self.target_type = [D.POKEDATA.find(self.target.name, "name", "type1"), D.POKEDATA.find(self.target.name, "name", "type2")]
-        self.attacker_status = self.status_calculation(self.attacker, self.target, self.field)
-        self.target_status = self.status_calculation(self.target, self.attacker, self.field)
+        self.attacker_status = self.status_calculation(self.attacker, self.attacker_field, self.target, self.field)
+        self.target_status = self.status_calculation(self.target, self.target_field, self.attacker, self.field)
 
         self.attack = 0
         self.defence = 0
@@ -118,7 +127,7 @@ class DamageCalculator:
         ratio = round(num / 4096, 1)
         self.log.append(f"{name}: *{ratio}")
 
-    def status_calculation(self, poke: Obj.PokeDetail, opponent: Obj.PokeDetail, field: Obj.Field):
+    def status_calculation(self, poke: Obj.PokeDetail, player: Obj.PlayerField, opponent_poke: Obj.PokeDetail, field: Obj.Field):
         def paradox_check(poke: Obj.PokeDetail, field: Obj.Field) -> bool:
             """
             パラドックスの特性が発動するならTrue,しないならFalseを返す
@@ -144,7 +153,7 @@ class DamageCalculator:
             else:
                 if rank_int(poke.rank_list[index-1]) > 0:
                     rank = (rank_int(poke.rank_list[index-1]) +2) /2
-                    if opponent.ability == "てんねん" and not self.gas_check():
+                    if opponent_poke.ability == "てんねん" and not self.gas_check():
                         if poke.ability != "かたやぶり":
                             rank = 1
                 else:
@@ -165,32 +174,31 @@ class DamageCalculator:
                         status[max_index].append(my_round(max_stat * 5325 / 4096))
                     label = D.LABEL[max_index]
             self.log.append(f"{poke.ability}発動: {label}上昇")
-        status[5][1] = self.speed_calc(poke, field, status[5][-1])
+        status[5][1] = self.speed_calc(poke, player, field, status[5][-1])
         return status
 
-    def speed_calc(self, poke: Obj.PokeDetail, field: Obj.Field, spd: int):
+    def speed_calc(self, poke: Obj.PokeDetail, player_field: Obj.PlayerField, field: Obj.Field, spd: int):
         speed = 4096
-        if poke.ability == "ようりょくそ" and field.weather == "にほんばれ":
-            speed = my_round5(speed * 8192 / 4096)
-            self.log.append(f"{poke.ability}: 素早*2.0")
-        if poke.ability == "すいすい" and field.weather == "あめ":
-            speed = my_round5(speed * 8192 / 4096)
-            self.log.append(f"{poke.ability}: 素早*2.0")
-        if poke.ability == "すなかき" and field.weather == "すなあらし":
-            speed = my_round5(speed * 8192 / 4096)
-            self.log.append(f"{poke.ability}: 素早*2.0")
-        if poke.ability == "ゆきかき" and field.weather == "ゆき":
-            speed = my_round5(speed * 8192 / 4096)
-            self.log.append(f"{poke.ability}: 素早*2.0")
-        if poke.ability == "サーフテール" and field.field == "エレキフィールド":
-            if not self.gas_check():
+        if not self.gas_check():
+            if poke.ability == "ようりょくそ" and field.weather == "にほんばれ":
                 speed = my_round5(speed * 8192 / 4096)
                 self.log.append(f"{poke.ability}: 素早*2.0")
-        if poke.ability == "かるわざ" and poke.ability_flag:
-            speed = my_round5(speed * 8192 / 4096)
-            self.log.append(f"{poke.ability}: 素早*2.0")
-        if poke.ability == "はやあし" and poke.bad_stat in ["まひ", "やけど", "どく", "もうどく", "こおり", "ねむり"]:
-            if not self.gas_check():
+            if poke.ability == "すいすい" and field.weather == "あめ":
+                speed = my_round5(speed * 8192 / 4096)
+                self.log.append(f"{poke.ability}: 素早*2.0")
+            if poke.ability == "すなかき" and field.weather == "すなあらし":
+                speed = my_round5(speed * 8192 / 4096)
+                self.log.append(f"{poke.ability}: 素早*2.0")
+            if poke.ability == "ゆきかき" and field.weather == "ゆき":
+                speed = my_round5(speed * 8192 / 4096)
+                self.log.append(f"{poke.ability}: 素早*2.0")
+            if poke.ability == "サーフテール" and field.field == "エレキフィールド":
+                speed = my_round5(speed * 8192 / 4096)
+                self.log.append(f"{poke.ability}: 素早*2.0")
+            if poke.ability == "かるわざ" and poke.ability_flag:
+                speed = my_round5(speed * 8192 / 4096)
+                self.log.append(f"{poke.ability}: 素早*2.0")
+            if poke.ability == "はやあし" and poke.bad_stat in ["まひ", "やけど", "どく", "もうどく", "こおり", "ねむり"]:
                 speed = my_round5(speed * 8192 / 4096)
                 self.log.append(f"{poke.ability}: 素早*1.5")
         if poke.item == 'こだわりスカーフ' and poke.ability != "ぶきよう":
@@ -199,13 +207,18 @@ class DamageCalculator:
         if poke.item == "くろいてっきゅう" and poke.ability != "ぶきよう":
             speed = my_round5(speed * 2048 / 4096)
             self.log.append(f"{poke.item}: 素早*0.5")
-        if poke.wind:
+        if player_field.wind:
             speed = my_round5(speed * 8192 / 4096)
             self.log.append("おいかぜ: 素早*2.0")
         speed = my_round5(spd * speed / 4096)
-        if poke.bad_stat == "まひ" and poke.ability != "はやあし":
-            speed = math.floor(speed / 2)
-            self.log.append("まひ: 素早*0.5")
+        if poke.bad_stat == "まひ":
+            if poke.ability != "はやあし":
+                speed = math.floor(speed / 2)
+                self.log.append("まひ: 素早*0.5")
+            else:
+                if not self.gas_check():
+                    speed = math.floor(speed / 2)
+                    self.log.append("まひ: 素早*0.5")
         return speed
 
     def poke_type_change(self):
@@ -378,6 +391,8 @@ class DamageCalculator:
                 self.move_power = 80
             elif kg < 200:
                 self.move_power = 100
+            elif 200 < kg:
+                self.move_power = 120
             self.log.append(f"{self.move_name}: 威力{self.move_power}")
 
         if self.move_name in ["しおふき", "ふんか", "ドラゴンエナジー"]:
@@ -553,7 +568,7 @@ class DamageCalculator:
                     self.add(ATK, self.attacker.ability, 2048)
                 if self.attacker.ability == "はりこみ":
                     self.add(ATK, self.attacker.ability, 8192)
-            if self.attacker.ability == "スナイパー" and self.target.crit:
+            if self.attacker.ability == "スナイパー" and self.target_field.crit:
                 self.add(DMG, self.attacker.ability, 6144)
 
         if self.attacker.bad_stat == "じゅうでん" and self.move_type == "でんき":
@@ -568,16 +583,16 @@ class DamageCalculator:
             if self.move_name == "かたきうち":
                 self.add(MOVE, self.move_name, 8192)
 
-        if self.attacker.help:
+        if self.attacker_field.help:
             self.add(MOVE, "てだすけ", 6144)
         if (self.move_name != "かわらわり" or self.move_name != "サイコファング" or self.attacker.ability != "すりぬけ"
-            or self.target.crit or self.move_name != "レイジングブル"):
+            or self.target_field.crit or self.move_name != "レイジングブル"):
             if self.target.a_wall and self.move_category == "物理":
                 if self.field.double:
                     self.add(DMG, "ダブルバトルリフレクター", 2732)
                 else:
                     self.add(DMG, "リフレクター", 2048)
-            if self.target.c_wall and self.move_category == "特殊":
+            if self.target_field.c_wall and self.move_category == "特殊":
                 if self.field.double:
                     self.add(DMG, "ダブルバトルひかりのかべ", 2732)
                 else:
@@ -932,7 +947,7 @@ class DamageCalculator:
         if self.move_name == "きょけんとつげき" and self.attacker.move_flag:
             result = my_round5(result * 8192 / 4096)
             self.calc_log.append(f"{self.move_name}: *2.0")
-        if self.target.crit:
+        if self.target_field.crit:
             result = my_round5(result * 6144 / 4096)
             self.calc_log.append(f"急所: *2.0")
         result = math.floor(result * random_number)

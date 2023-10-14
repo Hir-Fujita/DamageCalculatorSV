@@ -642,11 +642,6 @@ class StatusWidgetManagerPlus(StatusWidgetManager):
         self.rank_widgets = [CustomRankBox(method=self.update) for i in range(5)]
         self.move_flag_widget = CustomTuggleButton("技効果", method=self.update, width=10)
         self.bad_stat_widget = CustomFrame(CustomCommboBox(D.BADSTAT, method=self.update, width=6), text="状態異常")
-        self.a_wall_widget = CustomTuggleButton("リフレクター", method=self.update, width=10)
-        self.c_wall_widget = CustomTuggleButton("ひかりのかべ", method=self.update, width=10)
-        self.wind_widget = CustomTuggleButton("おいかぜ", method=self.update, width=10)
-        self.help_widget = CustomTuggleButton("てだすけ", method=self.update, width=10)
-        self.crit_widget = CustomTuggleButton("被急所", method=self.update, width=10)
         self.image_label = CustomImageLabelPage3()
         self.hp_now_widget = CustomFrame(CustomHPNowBox(method=self.hp_now_update), text="現在HP")
         self.result_widget = ResultWidget()
@@ -666,11 +661,6 @@ class StatusWidgetManagerPlus(StatusWidgetManager):
             self.terastal_widget.widget.t_button.reset()
             self.bad_stat_widget.widget.reset()
             self.move_flag_widget.reset()
-            self.a_wall_widget.reset()
-            self.c_wall_widget.reset()
-            self.wind_widget.reset()
-            self.help_widget.reset()
-            self.crit_widget.reset()
             self.auto_pokemon_item()
             self.hp_now_widget.widget.set(self.poke.status_list[0].value, self.poke.status_list[0].value)
             self.update()
@@ -692,11 +682,6 @@ class StatusWidgetManagerPlus(StatusWidgetManager):
             self.move_flag_widget,
             self.ability_widget.widget.t_button,
             self.bad_stat_widget.widget,
-            self.a_wall_widget,
-            self.c_wall_widget,
-            self.wind_widget,
-            self.help_widget,
-            self.crit_widget,
             self.hp_now_widget.widget
         )
 
@@ -745,6 +730,26 @@ class StatusWidgetManagerPlus(StatusWidgetManager):
             terastal = self.terastal_widget.get()
         self.image_label.update(self.name_widget.get(), self.item_widget.get(), terastal)
 
+class PlayerFieldManager:
+    def __init__(self, player_data: Obj.PlayerField):
+        self.player = player_data
+        self.a_wall_widget = CustomTuggleButton("リフレクター", method=self.update, width=10)
+        self.c_wall_widget = CustomTuggleButton("ひかりのかべ", method=self.update, width=10)
+        self.wind_widget = CustomTuggleButton("おいかぜ", method=self.update, width=10)
+        self.help_widget = CustomTuggleButton("てだすけ", method=self.update, width=10)
+        self.crit_widget = CustomTuggleButton("被急所", method=self.update, width=10)
+
+    def config(self):
+        self.player.config(
+            self.a_wall_widget,
+            self.c_wall_widget,
+            self.wind_widget,
+            self.help_widget,
+            self.crit_widget,
+        )
+
+    def update(self):
+        self.player.update()
 
 class FieldWidgetManager:
     def __init__(self, field_data: Obj.Field):
