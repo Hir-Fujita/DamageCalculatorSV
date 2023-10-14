@@ -188,11 +188,6 @@ class PokeDetail(Poke):
         self.bad_stat: str = ""
         self.move_flag: bool = False
         self.ability_flag: bool = False
-        self.a_wall: bool = False
-        self.c_wall: bool = False
-        self.help: bool = False
-        self.crit: bool = False
-        self.wind: bool = False
         self.status_list: "list[Union[StatusHPDetail, Status]]" = [StatusHPDetail()] + [Status() for _ in range(5)]
 
 

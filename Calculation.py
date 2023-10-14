@@ -587,7 +587,7 @@ class DamageCalculator:
             self.add(MOVE, "てだすけ", 6144)
         if (self.move_name != "かわらわり" or self.move_name != "サイコファング" or self.attacker.ability != "すりぬけ"
             or self.target_field.crit or self.move_name != "レイジングブル"):
-            if self.target.a_wall and self.move_category == "物理":
+            if self.target_field.a_wall and self.move_category == "物理":
                 if self.field.double:
                     self.add(DMG, "ダブルバトルリフレクター", 2732)
                 else:

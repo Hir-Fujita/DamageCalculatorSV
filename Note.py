@@ -324,6 +324,7 @@ class Page3:
             widget.add_tuggle_button(move_frame, "ロック", lambda index=index:self.damage_calc(side, index, True))
             widget.t_button.grid(row=index, column=2, padx=3, pady=2)
         manager.config()
+        field.config()
 
     def damage_calc(self, side: str, move_index: int, lock: bool=False):
         result = self.lock_calc(side)
