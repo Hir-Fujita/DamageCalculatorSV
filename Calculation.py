@@ -149,7 +149,7 @@ class DamageCalculator:
         status: "list[list[int]]" = []
         for index, stat in enumerate(poke.status_list):
             if index == 0:
-                status.append([stat.value_now, stat.value])
+                status.append([poke.hp_now, stat.value])
             else:
                 if rank_int(poke.rank_list[index-1]) > 0:
                     rank = (rank_int(poke.rank_list[index-1]) +2) /2

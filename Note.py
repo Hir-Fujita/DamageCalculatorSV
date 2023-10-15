@@ -348,12 +348,12 @@ class Page3:
                 res = self.id_dic.access(side, move_index, data)
                 self.manager[side].move_widgets[move_index].t_button.set(res)
             else:
-                before_hp = target.status_list[0].value_now
-                target.status_list[0].set_now(before_hp - result)
+                before_hp = target.hp_now
+                target.hp_now = before_hp - result
                 calculator = Calc.DamageCalculator(attacker, attacker_field.player, target, target_field.player, self.field_manager.field_data, move_index)
                 calculator.calculation()
                 widget.update(calculator)
-                target.status_list[0].set_now(before_hp)
+                target.hp_now = before_hp
                 self.manager[not_side].hp_now_widget.widget.set(before_hp)
         else:
             self.manager[side].move_widgets[move_index].t_button.set(False)

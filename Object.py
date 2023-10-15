@@ -188,7 +188,7 @@ class PokeDetail(Poke):
         self.bad_stat: str = ""
         self.move_flag: bool = False
         self.ability_flag: bool = False
-        self.status_list: "list[Union[StatusHPDetail, Status]]" = [StatusHPDetail()] + [Status() for _ in range(5)]
+        self.hp_now: int = 1
         self.hp_result: int = 0
 
     def config(
@@ -207,7 +207,6 @@ class PokeDetail(Poke):
             move_flag_variable: tk.BooleanVar,
             ability_flag_variable: tk.BooleanVar,
             bad_stat_variable: tk.StringVar,
-            hp_now_variable: tk.IntVar
         ):
         super().config(
             name_variable,
@@ -225,14 +224,17 @@ class PokeDetail(Poke):
         self.move_flag_variable = move_flag_variable
         self.ability_flag_bariable = ability_flag_variable
         self.bad_stat_variable = bad_stat_variable
-        self.hp_now_variable = hp_now_variable
+
+    def generate(self, name: str = ""):
+        super().generate(name)
+        self.hp_now = self.status_list[0].value
+        self.hp_result = 0
 
     def re_init(self, data: D.PokeData=None):
         """
         バナーセット時や手持ちのリセット時
         """
         super().__init__()
-        self.status_list: "list[Union[StatusHPDetail, Status]]" = [StatusHPDetail()] + [Status() for _ in range(5)]
         if data:
             self.generate(data.name)
             self.item = data.item
@@ -266,7 +268,7 @@ class PokeDetail(Poke):
             "rank": [rank for rank in self.rank_list],
             "terastal_flag": self.terastal_flag,
             "bad_stat": self.bad_stat,
-            "hp_now": self.status_list[0].value_now,
+            "hp_now": self.hp_now,
             "hp_result": self.hp_result
         }
         return dic
@@ -281,13 +283,13 @@ class PokeDetail(Poke):
         for index, stat in enumerate(self.status_list):
             if index == 0:
                 stat.status_update(dic["effort"][index], dic["individual"][index], self.level)
-                stat.set_now(dic["hp_now"])
             else:
                 stat.status_update(dic["effort"][index], dic["individual"][index], dic["nature"][index-1], self.level)
         self.move_list = dic["move"]
         self.rank_list = dic["rank"]
         self.terastal_flag = dic["terastal_flag"]
         self.bad_stat = dic["bad_stat"]
+        self.hp_now = dic["hp_now"]
         self.hp_result = dic["hp_result"]
 
     def print(self):

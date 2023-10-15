@@ -324,7 +324,6 @@ class CustomHPNowBox(CustomSpinBox):
                  *args, **kwargs):
         CustomSpinBox.__init__(self, method, *args, **kwargs)
         self.max_variable = tk.IntVar(value=1)
-        self.max = 1
         self.now_variable = tk.IntVar(value=1)
         if parent is not None:
             self.create(parent)
@@ -340,16 +339,14 @@ class CustomHPNowBox(CustomSpinBox):
         self.max_label = tk.Label(parent, textvariable=self.max_variable, font=("Meiryo UI", 16), width=3)
 
     def max_set(self, value: int):
-        self.max = value
         self.max_variable.set(value)
         self.config(to=value)
-        if self.now_variable.get() > value:
-            self.now_variable.set(value)
+        self.now_variable.set(value)
 
     def set(self, now: int, max: int=None):
-        self.now_variable.set(self.value_check(now))
         if max is not None:
             self.max_set(max)
+        self.now_variable.set(self.value_check(now))
 
     def get(self) -> int:
         return self.now_variable.get()
@@ -362,16 +359,16 @@ class CustomHPNowBox(CustomSpinBox):
         self.run_method()
 
     def value_check(self, value: int) -> int:
-        if value > self.max:
-            return self.max
+        if value > self.max_variable.get():
+            return self.max_variable.get()
         elif value < 1:
             return 1
         else:
             return value
 
     def rightclick(self):
-        if self.now_variable.get() != self.max:
-            self.now_variable.set(self.max)
+        if self.now_variable.get() != self.max_variable.get():
+            self.now_variable.set(self.max_variable.get())
         self.run_method()
 
     def key_input(self):
@@ -667,7 +664,6 @@ class StatusWidgetManagerPlus(StatusWidgetManager):
             self.bad_stat_widget.widget.reset()
             self.move_flag_widget.reset()
             self.auto_pokemon_item()
-            self.hp_now_widget.widget.set(self.poke.status_list[0].value, self.poke.status_list[0].value)
             self.update()
             self.image_update()
 
@@ -686,15 +682,14 @@ class StatusWidgetManagerPlus(StatusWidgetManager):
             self.terastal_widget.widget.t_button,
             self.move_flag_widget,
             self.ability_widget.widget.t_button,
-            self.bad_stat_widget.widget,
-            self.hp_now_widget.widget
+            self.bad_stat_widget.widget
         )
 
     def update(self):
         self.poke.update()
         [widget.set_label() for widget in self.status_widgets]
         self.image_update()
-        self.hp_now_widget.widget.set(self.poke.status_list[0].value_now, self.poke.status_list[0].value)
+        self.hp_now_widget.widget.set(self.poke.hp_now, self.poke.status_list[0].value)
         self.result_widget.image_update(self.status_widgets[0].status.value, 0, 0)
 
     def widget_update(self):
@@ -718,16 +713,14 @@ class StatusWidgetManagerPlus(StatusWidgetManager):
         self.image_update()
         for index, status in enumerate(self.status_widgets):
             status.set_label()
-        self.hp_now_widget.widget.set(self.poke.status_list[0].value_now, self.poke.status_list[0].value)
+        self.hp_now_widget.widget.set(self.poke.hp_now, self.poke.status_list[0].value)
         hp = self.poke.status_list[0].value
-        now = self.poke.status_list[0].value_now
-        self.result_widget.image_update(hp, hp-now, hp-now)
+        self.result_widget.image_update(hp, hp-self.poke.hp_now, hp-self.poke.hp_now)
 
     def hp_now_update(self):
-        self.poke.status_list[0].set_now(self.hp_now_widget.widget.now_variable.get())
+        self.poke.hp_now = self.hp_now_widget.widget.now_variable.get()
         hp = self.poke.status_list[0].value
-        now = self.poke.status_list[0].value_now
-        self.result_widget.image_update(hp, hp-now, hp-now)
+        self.result_widget.image_update(hp, hp-self.poke.hp_now, hp-self.poke.hp_now)
 
     def image_update(self):
         terastal = ""

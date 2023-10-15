@@ -300,10 +300,9 @@ class ImageGenerator:
         image.paste(move, (0, image.size[1]-move.size[1]), move)
         if mirror:
             image = ImageOps.mirror(image)
-        hp = poke.status_list[0]
-        dmg = hp.value - hp.value_now + poke.hp_result
-        print(dmg)
-        hp_img = cls.create_hp_image((140, 10), 100, 0, 0, tk=False)
+        hp = poke.status_list[0].value
+        dmg = hp - poke.hp_now + poke.hp_result
+        hp_img = cls.create_hp_image((140, 10), hp, dmg, dmg, tk=False)
         image.paste(hp_img, (10, 5))
 
         return ImageTk.PhotoImage(image)
