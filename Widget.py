@@ -4,6 +4,9 @@
 from typing import Tuple, Union, Callable
 import tkinter as tk
 from tkinter import ttk
+import time
+import threading as th
+import math
 
 import Data as D
 import Object as Obj
@@ -112,8 +115,7 @@ class CustomNatureBox(tk.Button):
 
 
 class CustomCommboBox(ttk.Combobox):
-    def __init__(self, values: D.CSV=None, parent=None, method: Callable=None,
-                 *args, **kwargs):
+    def __init__(self, values: D.CSV=None, parent=None, method: Callable=None, *args, **kwargs):
         self.values = values
         self.method = method
         self.args = args
@@ -146,6 +148,9 @@ class CustomCommboBox(ttk.Combobox):
             self.config(values=self.values.name_list)
         else:
             self.config(values=self.values)
+
+    def values_reset(self):
+        self.config(values=self.values.name_list)
 
     def values_update(self, flag: bool):
         input = self.get()
@@ -819,7 +824,7 @@ class ResultWidget(tk.LabelFrame):
     def __init__(self, parent=None):
         tk.LabelFrame.__init__(self, parent, text="計算結果")
         self.size = (400, 25)
-        self.image = Pr.ImageGenerator.create_hp_image(self.size, 10, 0, 0)
+        self.image = Pr.ImageGenerator.create_hp_image(self.size, 1, 0, 0)
         if parent is not None:
             self.create(parent)
 
@@ -913,5 +918,95 @@ class ChangeButtonWidget(tk.Frame):
         self.buttons[index].image_update()
 
 
+class Timer_widget(tk.Button):
+    def __init__(self):
+        self.playing = False
+        self.timer_thread = None
+        self.variable = tk.StringVar(value="20:00")
 
+    def create(self, parent, master: tk.Tk):
+        self.master = master
+        tk.Button.__init__(self, parent, textvariable=self.variable, command=self.click, font=("Mairyo UI", 20, "bold"))
+        self.pack(padx=5)
+
+    def click(self):
+        self.playing = not self.playing
+        if self.playing:
+            self.time_start = time.time()
+            self.timer_thread = th.Thread(target=self.battle_timer())
+            self.timer_thread.setDaemon(True)
+            self.timer_thread.start()
+        else:
+            self.timer_thread = None
+            self.variable.set("20:00")
+
+    def update(self):
+        now = time.time()
+        times = math.floor(now - self.time_start)
+        minit = math.floor(times / 60)
+        second = times % 60
+        second = 60 - second
+        if second == 60:
+            second = "00"
+            minit = 20 - minit
+        elif second < 10:
+            second = f"0{second}"
+            minit = 20 - minit -1
+        else:
+            minit = 20 - minit -1
+        if minit == 0 and second == 0:
+            self.variable.set("00:00")
+        else:
+            self.variable.set(f"{minit}:{second}")
+
+    def battle_timer(self):
+        if self.playing:
+            self.update()
+            self.master.after(1000, self.battle_timer)
+
+
+class ButtlePokeButton(tk.Button):
+    def __init__(self, index: int, mirror: bool):
+        self.index = index
+        self.mirror = mirror
+
+    def create(self, parent, poke: Obj.PokeDetail):
+        self.poke = poke
+        tk.Button.__init__(self, parent)
+        self.update()
+
+    def update(self):
+        self.image = Pr.ImageGenerator.create_battle_button(self.poke, self.mirror)
+        self.config(image=self.image)
+
+
+class ChangePokeWidget:
+    def __init__(self, side: str):
+        if side == tk.LEFT:
+            self.buttons = [ButtlePokeButton(i, True) for i in range(6)]
+        else:
+            self.buttons = [ButtlePokeButton(i, False) for i in range(6)]
+
+    def create(self, parent, poke_list: "list[Obj.PokeDetail]"):
+        [btn.create(parent, poke_list[index]) for index, btn in enumerate(self.buttons)]
+        [btn.pack(pady=2) for btn in self.buttons]
+
+    def update(self):
+        [btn.update() for btn in self.buttons]
+
+class BattleManager:
+    def __init__(self, side: str, battle_type: int):
+        self.side = side
+        self.battle_type = battle_type
+        self.party_widget = ChangePokeWidget(self.side)
+
+
+class DoubleBattleManager:
+    def __init__(self):
+        self.left = BattleManager(tk.LEFT, 1)
+        self.right = BattleManager(tk.RIGHT, 2)
+        self.timer_widget = Timer_widget()
+
+    def team_update(self):
+        self.left.party_widget.update()
 

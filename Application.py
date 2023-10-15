@@ -25,28 +25,21 @@ class Application(tk.Frame):
         master.resizable(height=False, width=False)
         style = ttk.Style()
         style.configure("example.TNotebook", tabmargins=[2, 5, 2, 0])
-        style.configure("example.TNotebook.Tab", padding=[50, 10])
+        style.configure("example.TNotebook.Tab", padding=[40, 6])
         style.configure("normal.TButton", font=("Helvetica", 20, "bold"))
-        style.map("example.TNotebook.Tab", background=[
-            ('active', 'orange'),
-            ('disabled', 'black'),
-            ('selected', 'lightgreen')
-            ])
         style.map("example.TNotebook.Tab", foreground=[
             ('active', 'white'),
             ('disabled', 'gray'),
             ('selected', 'blue')
             ])
-        style.configure("e.TNotebook", tabmargins=[2, 5, 2, 0])
-        style.configure("e.TNotebook.Tab", padding=[77, 5])
         self.pack()
 
         self.menu_widget = tk.Menu(master)
         master.config(menu=self.menu_widget)
 
-        self.manager = Manager()
+        self.manager = Manager(master)
 
-        note = ttk.Notebook(self, width=self.window_width, height=self.window_height-50, style="example.TNotebook")
+        note = ttk.Notebook(self, width=self.window_width, height=self.window_height-40, style="example.TNotebook")
         note.pack()
 
         self.page_1 = PokeRegisterNote(note, self.menu_widget)
@@ -58,7 +51,8 @@ class Application(tk.Frame):
         self.page_7 = TestNote(note, self.menu_widget)
 
 class Manager:
-    def __init__(self):
+    def __init__(self, master: tk.Tk):
+        self.master = master
         self.party = [Obj.PokeDetail() for i in range(6)]
 
     def poke_generate(self, index: int, data):
@@ -156,6 +150,7 @@ class DoubleDamageCalculatorNote(ParentFrame):
         super().active_page()
         self.menu.add_command(label="    設定    ")
         self.menu.add_command(label=" あいことば ")
+        self.widget_manager.battle_manager.team_update()
 
 class StatusCalculatorNote(ParentFrame):
     def __init__(self, note: ttk.Notebook, menu: tk.Menu):

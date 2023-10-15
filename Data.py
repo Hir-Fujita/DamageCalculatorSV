@@ -99,6 +99,7 @@ class CSV:
             self.data = [row for row in reader]
         self.key = self.data.pop(0)
         self.name_list = [data[self.key_index("name")] for data in self.data]
+        self.name_list_plus = [data for data in self.data if not "+" in data]
         if "kata" in self.key:
             self.kata_list = [data[self.key_index("kata")] for data in self.data]
 
@@ -107,7 +108,7 @@ class CSV:
 
     def find(self, value: str, key: str, return_key: str="") -> str:
         if not value:
-            return ""
+            return "0"
         else:
             value_list = [data[self.key_index(key)] for data in self.data]
             index = value_list.index(value)

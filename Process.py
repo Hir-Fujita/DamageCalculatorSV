@@ -3,6 +3,7 @@
 
 import pickle
 from tkinter import filedialog
+import re
 from PIL import Image, ImageTk, ImageDraw, ImageOps, ImageFont, ImageFilter
 import Data as D
 import Object as Obj
@@ -53,8 +54,36 @@ def metronome(name: str, mirror: bool) -> Image.Image:
         return image
 
 class ImageGenerator:
+    def img_open(self, name: str, category: str, size: "tuple[int]"=None):
+        if category == "poke":
+            name = D.POKEDATA.find(name, "name", "number")
+            parent = "pokemon"
+        elif category == "item":
+            parent = "item"
+        elif category == "terastal":
+            parent = "type"
+        image: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/{parent}/{name}")
+        if size is not None:
+            if image.size[0] > size[0] or image.size[1] > size[1]:
+                image = image.resize((image.size[0]*2, image.size[1]*2))
+            image.thumbnail(size)
+        return image
+
+    def product(self, name: str) -> Image.Image:
+        num = re.sub(r"[^0-9]", "", name)
+        text_image = self.create_text(f"+{num}")
+        return text_image
+
+    def create_text(self, text: str, width=2) -> Image.Image:
+        text_image = Image.new("RGBA", (400, 400), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(text_image)
+        font = ImageFont.truetype(f"{D.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 40)
+        draw.text((0, 0), text, fill="white", stroke_width=width, stroke_fill="black", font=font)
+        text_image = text_image.crop(text_image.split()[-1].getbbox())
+        return text_image
+
     @classmethod
-    def create_page1(self, name: str="", item: str="", terastal: str=""):
+    def create_page1(cls, name: str="", item: str="", terastal: str=""):
         size = (200, 200)
         image = Image.new("RGBA", size, (0, 0, 0, 0))
         if name:
@@ -62,22 +91,24 @@ class ImageGenerator:
         else:
             number = "0"
         if terastal:
-            terastal_image: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/type/{terastal}")
-            terastal_image.thumbnail((100, 100))
+            terastal_image = cls.img_open(cls, terastal, "terastal", (100, 100))
             image.paste(terastal_image, (0, 0), terastal_image)
         poke_image: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/pokemon/{number}")
+        poke_image = cls.img_open(cls, name, "poke")
         image.paste(poke_image, (size[0]//2 - poke_image.size[0]//2, size[1]-poke_image.size[1]), mask=poke_image)
         if item:
-            if "メトロノーム" in item:
-                item_image = metronome(item, False)
-            else:
-                item_image: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/item/{item}")
-            item_image = item_image.resize((70, 70))
+            item_name = re.sub(r"[0-9+]", "", item)
+            item_image = cls.img_open(cls, item_name, "item", (70, 70))
+            if "+" in item:
+                num = re.sub(r"[^0-9]", "", item)
+                text: Image.Image = cls.create_text(cls, f"+{num}")
+                text.thumbnail((200, item_image.size[1]/3))
+                item_image.paste(text, (item_image.size[0]-text.size[0], item_image.size[1]-text.size[1]), mask=text)
             image.paste(item_image, (size[0]-item_image.size[0]-10, size[1]-item_image.size[1]), mask=item_image)
         return ImageTk.PhotoImage(image)
 
     @classmethod
-    def create_banner(self, data: D.PokeData=None):
+    def create_banner(cls, data: D.PokeData=None):
         size = (400, 200)
         image = Image.new("RGBA", size=size, color=(0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
@@ -90,22 +121,21 @@ class ImageGenerator:
             draw.rounded_rectangle(
                 [(0, 0), (size[0]-1, size[1]-1)],
                 radius=10, fill=color, outline="black", width=3)
-            terastal_icon: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/type/{data.terastal}")
-            terastal_icon.thumbnail((size[1]-10, size[1]-10))
+            terastal_icon = cls.img_open(cls, data.terastal, "terastal", (size[1]-10, size[1]-10))
             image.paste(terastal_icon, (size[0]//2 - terastal_icon.size[0]//2, size[1]//2 - terastal_icon.size[1]//2), mask=terastal_icon)
-            number = D.POKEDATA.find(data.name, "name", "number")
-            pokemon_icon: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/pokemon/{number}")
-            pokemon_icon.thumbnail((size[1]-10, size[1]-10))
+            pokemon_icon = cls.img_open(cls, data.name, "poke", (size[1]-10, size[1]-10))
             pokemon_icon = ImageOps.mirror(pokemon_icon)
             image.paste(pokemon_icon, (10, size[1]-pokemon_icon.size[1]-4), mask=pokemon_icon)
             if data.item:
-                if "メトロノーム" in data.item:
-                    item_icon = metronome(data.item, True)
-                else:
-                    item_icon: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/item/{data.item}")
-                item_icon.thumbnail((60, 60))
-                item_icon = ImageOps.mirror(item_icon)
-                image.paste(item_icon, (4, size[1]-item_icon.size[1]-4), mask=item_icon)
+                item_name = re.sub(r"[0-9+]", "", data.item)
+                item_image = cls.img_open(cls, item_name, "item", (60, 60))
+                item_image = ImageOps.mirror(item_image)
+                if "+" in data.item:
+                    num = re.sub(r"[^0-9]", "", data.item)
+                    text: Image.Image = cls.create_text(cls, f"+{num}")
+                    text.thumbnail((200, item_image.size[1]/3))
+                    item_image.paste(text, (item_image.size[0]-text.size[0], item_image.size[1]-text.size[1]), mask=text)
+                image.paste(item_image, (4, size[1]-item_image.size[1]-4), mask=item_image)
             font = ImageFont.truetype(f"{D.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 26)
             draw.text((10, 4), f"{data.name}:Lv{data.level}",fill="white", stroke_width=2, stroke_fill="black", font=font)
             font = ImageFont.truetype(f"{D.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 20)
@@ -135,32 +165,33 @@ class ImageGenerator:
         return ImageTk.PhotoImage(image)
 
     @classmethod
-    def create_page3(self, name:str="", item: str="", terastal: str="", mirror: bool=True):
+    def create_page3(cls, name:str="", item: str="", terastal: str="", mirror: bool=True):
         size = (180, 180)
         image = Image.new("RGBA", size, (0, 0, 0, 0))
-        if name:
-            number = D.POKEDATA.find(name, "name", "number")
-        else:
-            number = "0"
         if terastal:
-            terastal_image: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/type/{terastal}")
-            terastal_image.thumbnail((150, 150))
+            terastal_image = cls.img_open(cls, terastal, "terastal", (150, 150))
             image.paste(terastal_image, (size[0]-terastal_image.size[0], 0), terastal_image)
-        poke_image: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/pokemon/{number}")
+        poke_image = cls.img_open(cls, name, "poke")
         image.paste(poke_image, (size[0]//2 - poke_image.size[0]//2, size[1]-poke_image.size[1]), mask=poke_image)
         if item:
-            if "メトロノーム" in item:
-                item_image = metronome(item, mirror)
-            else:
-                item_image: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/item/{item}")
-            item_image = item_image.resize((70, 70))
+            item_name = re.sub(r"[0-9+]", "", item)
+            item_image = cls.img_open(cls, item_name, "item", (70, 70))
+            if mirror:
+                item_image = ImageOps.mirror(item_image)
+            if "+" in item:
+                num = re.sub(r"[^0-9]", "", item)
+                text: Image.Image = cls.create_text(cls, f"+{num}")
+                text.thumbnail((200, item_image.size[1]/3))
+                item_image.paste(text, (item_image.size[0]-text.size[0], item_image.size[1]-text.size[1]), mask=text)
+            if mirror:
+                item_image = ImageOps.mirror(item_image)
             image.paste(item_image, (size[0]-item_image.size[0], size[1]-item_image.size[1]), mask=item_image)
         if mirror:
             image = ImageOps.mirror(image)
         return ImageTk.PhotoImage(image)
 
     @classmethod
-    def create_hp_image(self, size: "tuple[int]", hp: int, max: int, min: int, width: int=2):
+    def create_hp_image(self, size: "tuple[int]", hp: int, max: int, min: int, width: int=2, tk: bool=True):
         def hp_color(ratio: int):
             GREEN = (0, 196, 0)
             GREEN_2 = (164, 255, 164)
@@ -177,21 +208,27 @@ class ImageGenerator:
                 return BLACK, BLACK
             else:
                 return YELLOW, YELLOW_2
-        image = Image.new("RGB", (size[0]+width, size[1]+width*2), (0, 0, 0))
-        draw = ImageDraw.Draw(image)
-        ratio = size[0] // 100
-        max_dmg = round((hp - max) / hp * 100, ratio)
+
+        image = Image.new("RGB", (size[0]+width*2, size[1]+width*2), (0, 0, 0))
+        paste_image = Image.new("RGB", (size[0], size[1]), (0, 0, 0))
+        draw = ImageDraw.Draw(paste_image)
+        ratio = size[0] / 100
+        max_dmg = round((hp - max) / hp * 100 *ratio, 1)
         color_max, _ = hp_color(max_dmg)
-        min_dmg = round((hp - min) / hp * 100, ratio)
+        min_dmg = round((hp - min) / hp * 100 *ratio, 1)
         _, color_min = hp_color(min_dmg)
         if min_dmg > 0:
-            draw.rectangle((width, width, min_dmg *ratio-1, size[1]+width-1), fill=color_min)
+            draw.rectangle((0, 0, min_dmg, size[1]), fill=color_min)
         if max_dmg > 0:
-            draw.rectangle((width, width, max_dmg *ratio-1, size[1]+width-1), fill=color_max)
+            draw.rectangle((0, 0, max_dmg, size[1]), fill=color_max)
         for i in range(9):
             num = i+1
-            draw.line(((num*10*ratio, width), (num*10*ratio, size[1]+width-1)), (255, 255, 255), 1)
-        return ImageTk.PhotoImage(image)
+            draw.line(((int(num* paste_image.size[0]/10), 0), (int(num* paste_image.size[0]/10), paste_image.size[1])), (255, 255, 255), 1)
+        image.paste(paste_image, (width, width))
+        if tk:
+            return ImageTk.PhotoImage(image)
+        else:
+            return image
 
     @classmethod
     def create_field(self, weather: str="", field: str=""):
@@ -214,19 +251,15 @@ class ImageGenerator:
         return ImageTk.PhotoImage(image)
 
     @classmethod
-    def create_button(self, name="", lock: bool=False, mirror: bool=False):
+    def create_button(cls, name="", lock: bool=False, mirror: bool=False):
         image = Image.new("RGBA", (120, 50), (0, 0, 0, 0))
-        if name == "":
-            poke: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/pokemon/0")
+        poke_img = cls.img_open(cls, name, "poke")
+        poke_img = ImageOps.mirror(poke_img)
+        poke_img = poke_img.resize((int(poke_img.size[0]/2), int(poke_img.size[1]/2)))
+        if poke_img.size[1] > image.size[1]:
+            image.paste(poke_img, (0, int(image.size[1]/2-poke_img.size[1]/2)))
         else:
-            num = D.POKEDATA.find(name, "name", "number")
-            poke: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/pokemon/{num}")
-        poke = poke.resize((poke.size[0]*2, poke.size[1]*2))
-        poke = poke.crop((0, 0, poke.size[0], poke.size[1]/3*2))
-        poke = poke.crop(poke.split()[-1].getbbox())
-        poke.thumbnail((120, 50))
-        poke = ImageOps.mirror(poke)
-        image.paste(poke, (0, 0))
+            image.paste(poke_img, (0, image.size[1]-poke_img.size[1]))
         if not mirror:
             image = ImageOps.mirror(image)
         if lock:
@@ -235,6 +268,46 @@ class ImageGenerator:
             draw.text((62, 29), "LOCK",fill="white", stroke_width=2, stroke_fill="black", font=font)
         return ImageTk.PhotoImage(image)
 
-    # @classmethod
-    # def create_battle_button(self, )
+    @classmethod
+    def create_battle_button(cls, poke: Obj.PokeDetail, mirror: bool):
+        image = Image.new("RGBA", (160, 100), (0, 0, 0, 0))
+        if poke.terastal_flag and poke.terastal != "":
+            terastal_img = cls.img_open(cls, poke.terastal, "terastal" (100, 100))
+            image.paste(terastal_img, (image.size[0]-terastal_img.size[0], 0))
+        poke_img = cls.img_open(cls, poke.name, "poke")
+        poke_img = poke_img.resize((int(poke_img.size[0]/3*2), int(poke_img.size[1]/3*2)))
+        if poke_img.size[1] > image.size[1]:
+            image.paste(poke_img, (image.size[0]-poke_img.size[0], 0))
+        else:
+            image.paste(poke_img, (image.size[0]-poke_img.size[0], image.size[1]-poke_img.size[1]))
+        if poke.item != "":
+            item_name = re.sub(r"[0-9+]", "", poke.item)
+            item_image = cls.img_open(cls, item_name, "item", (40, 40))
+            if mirror:
+                item_image = ImageOps.mirror(item_image)
+            if "+" in poke.item:
+                num = re.sub(r"[^0-9]", "", poke.item)
+                text: Image.Image = cls.create_text(cls, f"+{num}")
+                text.thumbnail((200, item_image.size[1]/3))
+                item_image.paste(text, (item_image.size[0]-text.size[0], item_image.size[1]-text.size[1]), mask=text)
+            if mirror:
+                item_image = ImageOps.mirror(item_image)
+            image.paste(item_image, (image.size[0]-item_image.size[0], image.size[1]-item_image.size[1]), mask=item_image)
+        move = cls.create_text(cls, "\n".join(poke.move_list), 4)
+        move.thumbnail((140, 70))
+        if mirror:
+            move = ImageOps.mirror(move)
+        image.paste(move, (0, image.size[1]-move.size[1]), move)
+        if mirror:
+            image = ImageOps.mirror(image)
+        hp = poke.status_list[0]
+        dmg = hp.value - hp.value_now + poke.hp_result
+        print(dmg)
+        hp_img = cls.create_hp_image((140, 10), 100, 0, 0, tk=False)
+        image.paste(hp_img, (10, 5))
 
+        return ImageTk.PhotoImage(image)
+
+    @classmethod
+    def create_double_banner(cls, poke_1: Obj.PokeDetail, poke_2: Obj.PokeDetail, mirror: bool=False):
+        pass

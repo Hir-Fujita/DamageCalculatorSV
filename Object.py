@@ -58,7 +58,7 @@ class Status(StatusHP):
         if self.basestatus:
             self.value = math.floor(math.floor(math.floor(math.floor(math.floor(base + effort)*level) / 100) + 5) *self.nature)
         else:
-            self.value = 0
+            self.value = 1
 
     def status_update(self, effort: int=0, individual: int=31, nature: float=1.0, level: int=50):
         self.effort = effort
@@ -89,8 +89,8 @@ class StatusHPDetail(StatusHP):
         self.value_now = self.value
 
     def set_now(self, value: int):
-        if value < 0:
-            value = 0
+        if value < 1:
+            value = 1
         self.value_now = value
 
     def print(self):
@@ -189,7 +189,7 @@ class PokeDetail(Poke):
         self.move_flag: bool = False
         self.ability_flag: bool = False
         self.status_list: "list[Union[StatusHPDetail, Status]]" = [StatusHPDetail()] + [Status() for _ in range(5)]
-
+        self.hp_result: int = 0
 
     def config(
             self,
@@ -266,7 +266,8 @@ class PokeDetail(Poke):
             "rank": [rank for rank in self.rank_list],
             "terastal_flag": self.terastal_flag,
             "bad_stat": self.bad_stat,
-            "hp_now": self.status_list[0].value_now
+            "hp_now": self.status_list[0].value_now,
+            "hp_result": self.hp_result
         }
         return dic
 
@@ -287,6 +288,7 @@ class PokeDetail(Poke):
         self.rank_list = dic["rank"]
         self.terastal_flag = dic["terastal_flag"]
         self.bad_stat = dic["bad_stat"]
+        self.hp_result = dic["hp_result"]
 
     def print(self):
         print("-------------------------PokeDetail.Object-------------------------")

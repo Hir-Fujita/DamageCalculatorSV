@@ -360,6 +360,7 @@ class Page3:
             widget.reset()
 
     def change(self, side: str, index: int):
+        self.manager[side].name_widget.widget.values_reset()
         main_poke = self.manager[side].poke.copy()
         button_poke = self.manager[side].button_widget.copy(index)
         self.manager[side].poke.paste(button_poke)
@@ -406,17 +407,20 @@ class Page5:
     """
     def __init__(self, parent, manager: Application.Manager):
         self.manager = manager
+        self.battle_manager = Wid.DoubleBattleManager()
         left_frame = tk.Frame(parent)
         left_frame.pack(side=tk.LEFT)
+        self.battle_manager.left.party_widget.create(left_frame, self.manager.party)
 
         right_frame = tk.Frame(parent)
         right_frame.pack(side=tk.RIGHT)
+        self.battle_manager.right.party_widget.create(right_frame, self.manager.party)
 
         top_frame = tk.Frame(parent)
         top_frame.pack()
+        self.battle_manager.timer_widget.create(top_frame, self.manager.master)
 
-        a = tk.Label(parent, text="a")
-        a.pack()
+
 
 class Page6:
     def __init__(self, parent):
