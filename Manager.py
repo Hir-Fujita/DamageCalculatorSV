@@ -11,15 +11,16 @@ import Data
 class Manager:
     def __init__(self, master):
         self.master = master
-        self.image_flag = True
+        self.image_flag = False
         self.party = [Obj.PokeDetail() for i in range(6)]
+        self.enemy = [Obj.PokeDetail() for i in range(6)]
 
     def poke_generate(self, index: int, data):
         self.party[index].re_init(data)
 
 class StatusWidgetManager:
-    def __init__(self, poke: Obj.Poke):
-        self.poke = poke
+    def __init__(self):
+        self.poke = Obj.Poke()
         self.method = None
         self.name_widget = Wid.CustomCommboBox(Data.POKEDATA, method=self.name_widget_func)
         self.level_widget = Wid.CustomLevelBox(method=self.update)
@@ -75,10 +76,10 @@ class StatusWidgetManager:
     def add_update_method(self, method: Callable):
         self.method = method
 
-class StatusWidgetManagerPlus(StatusWidgetManager):
-    def __init__(self, poke: Obj.PokeDetail):
-        super().__init__(poke)
-        self.poke = poke
+class StatusWidgetManagerPage3(StatusWidgetManager):
+    def __init__(self):
+        super().__init__()
+        self.poke = Obj.PokeDetail()
         self.ability_widget = Wid.CustomCommboButtonBox(method=self.update)
         self.terastal_widget = Wid.CustomCommboButtonBox(Data.TYPEDATA.list, method=self.update)
         self.move_widgets = [Wid.CustomCommboButtonBox(Data.MOVEDATA, method=self.update) for i in range(4)]
@@ -108,8 +109,8 @@ class StatusWidgetManagerPlus(StatusWidgetManager):
             self.update()
             self.image_update()
 
-    def config(self):
-        super().config()
+    def set_dic(self):
+        super().set_dic()
         self.poke.set_dic("rank", [widget for widget in self.rank_widgets])
         self.poke.set_dic("terastal_flag", self.terastal_widget.t_button)
         self.poke.set_dic("move_flag", self.move_flag_widget)
@@ -139,7 +140,9 @@ class StatusWidgetManagerPlus(StatusWidgetManager):
             widget.set(self.poke.move_list[index])
         for index, widget in enumerate(self.rank_widgets):
             widget.set(self.poke.rank_list[index])
+        self.ability_widget.t_button.set(self.poke.ability_flag)
         self.terastal_widget.t_button.set(self.poke.terastal_flag)
+        self.move_flag_widget.set(self.poke.move_flag)
         self.bad_stat_widget.set(self.poke.bad_stat)
         self.image_update()
         for index, status in enumerate(self.status_widgets):
@@ -159,12 +162,27 @@ class StatusWidgetManagerPlus(StatusWidgetManager):
             terastal = self.terastal_widget.get()
         self.image_label.update(self.name_widget.get(), self.item_widget.get(), terastal)
 
+
+class StatusWidgetManagerBattle(StatusWidgetManagerPage3):
+    def __init__(self, side: str):
+        super().__init__()
+        del self.result_widget
+        del self.button_widget
+        self.move_counter_widgets = [Wid.CustomCountBox() for i in range(4)]
+
+    def image_update(self):
+        pass
+
+
 class PlayerFieldManager:
-    def __init__(self, player_data: Obj.PlayerField):
-        self.player = player_data
+    def __init__(self):
+        self.player = Obj.PlayerField()
         self.a_wall_widget = Wid.CustomTuggleButton("リフレクター", method=self.update, width=10)
+        self.a_wall_counter = Wid.CustomCountBox(max=5)
         self.c_wall_widget = Wid.CustomTuggleButton("ひかりのかべ", method=self.update, width=10)
+        self.c_wall_counter = Wid.CustomCountBox(max=5)
         self.wind_widget = Wid.CustomTuggleButton("おいかぜ", method=self.update, width=10)
+        self.wind_counter = Wid.CustomCountBox(max=5)
         self.help_widget = Wid.CustomTuggleButton("てだすけ", method=self.update, width=10)
         self.crit_widget = Wid.CustomTuggleButton("被急所", method=self.update, width=10)
 
@@ -181,13 +199,16 @@ class PlayerFieldManager:
         self.player.update()
 
 class FieldWidgetManager:
-    def __init__(self, field_data: Obj.Field):
-        self.field_data = field_data
+    def __init__(self):
+        self.field_data = Obj.Field()
         self.double_widget = Wid.CustomTuggleButton("ダブルバトル", method=self.update, width=12)
         self.field_widget = Wid.CustomCommboBox(Data.FIELD, method=self.update, width=12)
         self.weather_widget = Wid.CustomCommboBox(Data.WEATHER, method=self.update, width=12)
         self.field_ability_widget_1 = Wid.CustomCommboBox(Data.ABIILITY, method=self.update, width=12)
         self.field_ability_widget_2 = Wid.CustomCommboBox(Data.ABIILITY, method=self.update, width=12)
+        self.gravity_widget = Wid.CustomTuggleButton("じゅうりょく", method=self.update, width=12)
+        self.magic_room_widget = Wid.CustomTuggleButton("マジックルーム", method=self.update, width=12)
+        self.wonder_room_widget = Wid.CustomTuggleButton("ワンダールーム", method=self.update, width=12)
         self.image_label = Wid.CustomImageLabel()
 
     def config(self):
@@ -207,66 +228,30 @@ class BattleManager:
     def __init__(self, side: str, battle_type: int):
         self.side = side
         self.battle_type = battle_type
+        self.banners = [Wid.BannerWidgetPage3(side) for i in range(battle_type)]
         self.party_widget = Wid.ChangePokeWidget(self.side)
-        self.pokemons = [Obj.PokeDetail() for i in range(battle_type)]
-        self.battle_widgets = [Wid.BattleWidget(self.pokemons[i], side, 1 / battle_type) for i in range(battle_type)]
-        self.status_widgets = [StatusWidgetManagerPlus(self.pokemons[i]) for i in range(battle_type)]
+        self.battle_widgets = [Wid.BattleWidget(side, battle_type) for i in range(battle_type)]
+        self.player_widget = PlayerFieldManager()
 
-    def create(self, parents: "list[tk.Tk]"):
-        for index, parent in enumerate(parents):
-            top_frame = tk.Frame(parent)
-            top_frame.pack()
-            self.battle_widgets[index].create(top_frame)
+    def create(self, parent: "list[tk.Tk]"):
+        for index in range(self.battle_type):
+            frame = tk.LabelFrame(parent, text=index)
+            frame.pack(side=self.side, fill="both", expand=True, padx=2)
+            self.battle_widgets[index].create(frame)
 
-            middle_frame = tk.Frame(parent)
-            middle_frame.pack()
-            font = ("MeiryoUI", 10)
-            for i in range(6):
-                self.status_widgets[index].status_widgets[i].status_label.create(middle_frame)
-                self.status_widgets[index].status_widgets[i].status_label.config(width=3, font=("MeiryoUI", 12, "bold"))
-                self.status_widgets[index].status_widgets[i].status_label.grid(row=0, column=i)
-                self.status_widgets[index].status_widgets[i].individual.create(middle_frame)
-                self.status_widgets[index].status_widgets[i].individual.config(width=3, font=font)
-                self.status_widgets[index].status_widgets[i].effort.create(middle_frame)
-                self.status_widgets[index].status_widgets[i].effort.config(width=3, font=font)
-                self.status_widgets[index].status_widgets[i].individual.grid(row=1, column=i, padx=2, pady=1)
-                self.status_widgets[index].status_widgets[i].effort.grid(row=2, column=i)
-                if self.side == tk.LEFT:
-                    self.status_widgets[index].status_widgets[i].individual.disabled()
-                    self.status_widgets[index].status_widgets[i].effort.disabled()
-                if i != 0:
-                    self.status_widgets[index].rank_widgets[i-1].create(middle_frame)
-                    self.status_widgets[index].rank_widgets[i-1].config(width=3, font=font)
-                    self.status_widgets[index].rank_widgets[i-1].grid(row=3, column=i, padx=2, pady=1)
-            
-
-            middle_2_frame = tk.Frame(parent)
-            middle_2_frame.pack()
-            self.status_widgets[index].terastal_widget.create(middle_2_frame)
-            self.status_widgets[index].terastal_widget.widget.config(width=12)
-            self.status_widgets[index].terastal_widget.widget.pack(side=tk.LEFT, padx=5)
-            self.status_widgets[index].terastal_widget.widget.add_tuggle_button(self.status_widgets[index].terastal_widget, "テラスタル", self.status_widgets[index].update)
-            self.status_widgets[index].terastal_widget.widget.t_button.pack(side=tk.LEFT)
-            self.status_widgets[index].terastal_widget.grid(row=0, column=0, columnspan=2)
-            self.status_widgets[index].ability_widget.create(middle_2_frame)
-            self.status_widgets[index].ability_widget.config(width=12)
-            self.status_widgets[index].ability_widget.widget.pack(side=tk.LEFT)
-            self.status_widgets[index].ability_widget.widget.add_tuggle_button(self.status_widgets[index].ability_widget, "発動", self.status_widgets[index].update)
-            self.status_widgets[index].ability_widget.widget.t_button.pack(side=tk.LEFT)
-            self.status_widgets[index].ability_widget.grid(row=1, column=0)
-            self.status_widgets[index].bad_stat_widget.create(middle_2_frame)
-            self.status_widgets[index].bad_stat_widget.widget.pack()
-            self.status_widgets[index].bad_stat_widget.grid(row=1, column=1)
-            self.status_widgets[index].item_widget.create(middle_2_frame)
-            self.status_widgets[index].item_widget.config(width=16)
-            self.status_widgets[index].item_widget.widget.pack(side=tk.LEFT)
-            self.status_widgets[index].item_widget.grid(row=2, column=0)
-            self.status_widgets[index].move_flag_widget.create(middle_2_frame)
-            self.status_widgets[index].move_flag_widget.config(width=8)
-            self.status_widgets[index].move_flag_widget.grid(row=2, column=1)
-            if self.side == tk.LEFT:
-                pass
-            self.status_widgets[index].config()
+    def player_create(self, parent):
+        self.player_widget.a_wall_widget.create(parent)
+        self.player_widget.c_wall_widget.create(parent)
+        self.player_widget.wind_widget.create(parent)
+        self.player_widget.help_widget.create(parent)
+        self.player_widget.crit_widget.create(parent)
+        col = 0 if self.side == tk.LEFT else 1
+        self.player_widget.a_wall_widget.grid(row=0, column=col, padx=2, pady=2)
+        self.player_widget.c_wall_widget.grid(row=1, column=col, padx=2, pady=2)
+        self.player_widget.wind_widget.grid(row=2, column=col, padx=2, pady=2)
+        col = 2 if self.side == tk.LEFT else 0
+        self.player_widget.help_widget.grid(row=0, column=col, padx=2, pady=2)
+        self.player_widget.crit_widget.grid(row=1, column=col, padx=2, pady=2)
 
 
 
@@ -275,6 +260,7 @@ class DoubleBattleManager:
     def __init__(self):
         self.left = BattleManager(tk.LEFT, 2)
         self.right = BattleManager(tk.RIGHT, 2)
+        self.field = FieldWidgetManager()
         self.timer_widget = Wid.Timer_widget()
 
     def team_update(self):

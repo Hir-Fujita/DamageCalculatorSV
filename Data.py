@@ -31,7 +31,7 @@ def save_filedialogwindow(save_name: str, title: str, parent_folder: str, filety
     return filepath
 
 def open_filedialogwindow(title: str, parent_folder: str, filetypes: "tuple[str, str]") -> str:
-    load_folder = f"./{FOLDER}/Data/{parent_folder}"
+    load_folder = f"{FOLDER}/Data/{parent_folder}"
     filepath = filedialog.askopenfilename(
         title=title,
         multiple=False,

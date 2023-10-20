@@ -18,8 +18,8 @@ class Application(tk.Frame):
     def __init__(self, master: tk.Tk=None):
         super().__init__(master)
 
-        self.window_width = 1400
-        self.window_height = 800
+        self.window_width = 1350
+        self.window_height = 700
         master.geometry(f"{self.window_width}x{self.window_height}+100+100")
         master.title(f"{NAME}_{VERSION}")
         master.resizable(height=False, width=False)
@@ -44,18 +44,19 @@ class Application(tk.Frame):
 
         self.page_1 = PokeRegisterNote(note, self.menu_widget, self.manager)
         self.page_2 = PartyRegisterNote(note, self.menu_widget, self.manager)
-        # self.page_3 = DamageCalculatorNote(note, self.menu_widget)
-        # self.page_4 = SingleDamageCalculatorNote(note, self.menu_widget, self.manager)
-        # self.page_5 = DoubleDamageCalculatorNote(note, self.menu_widget, self.manager)
-        # self.page_6 = StatusCalculatorNote(note, self.menu_widget)
-        # self.page_7 = TestNote(note, self.menu_widget)
+        self.page_3 = DamageCalculatorNote(note, self.menu_widget, self.manager)
+        self.page_4 = SingleDamageCalculatorNote(note, self.menu_widget, self.manager)
+        self.page_5 = DoubleDamageCalculatorNote(note, self.menu_widget, self.manager)
+        self.page_6 = StatusCalculatorNote(note, self.menu_widget, self.manager)
+        self.page_7 = TestNote(note, self.menu_widget, self.manager)
 
 class ParentFrame:
     """
     各タブの親フレーム
     """
-    def __init__(self, note: ttk.Notebook, menu: tk.Menu):
+    def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager.Manager):
         self.menu = menu
+        self.manager = manager
         self.frame = tk.Frame()
         self.frame.pack()
         self.frame.bind("<Visibility>", lambda e:self.active_page())
@@ -72,7 +73,7 @@ class PokeRegisterNote(ParentFrame):
     ポケモン登録のためのタブ
     """
     def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager.Manager):
-        super().__init__(note, menu)
+        super().__init__(note, menu, manager)
         self.widget_manager = Note.Page1(self.frame, manager)
 
     def get_tab_name(self) -> str:
@@ -90,7 +91,7 @@ class PartyRegisterNote(ParentFrame):
     パーティ登録のためのタブ
     """
     def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager):
-        super().__init__(note, menu)
+        super().__init__(note, menu, manager)
         self.widget_manager = Note.Page2(self.frame, manager)
 
     def get_tab_name(self) -> str:
@@ -104,8 +105,8 @@ class PartyRegisterNote(ParentFrame):
         self.menu.add_command(label=" あいことば ")
 
 class DamageCalculatorNote(ParentFrame):
-    def __init__(self, note: ttk.Notebook, menu: tk.Menu):
-        super().__init__(note, menu)
+    def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager):
+        super().__init__(note, menu, manager)
         self.widget_manager = Note.Page3(self.frame)
 
     def get_tab_name(self) -> str:
@@ -118,7 +119,7 @@ class DamageCalculatorNote(ParentFrame):
 
 class SingleDamageCalculatorNote(ParentFrame):
     def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager):
-        super().__init__(note, menu)
+        super().__init__(note, menu, manager)
         self.widget_manager = Note.Page4(self.frame, manager)
 
     def get_tab_name(self) -> str:
@@ -131,7 +132,7 @@ class SingleDamageCalculatorNote(ParentFrame):
 
 class DoubleDamageCalculatorNote(ParentFrame):
     def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager):
-        super().__init__(note, menu)
+        super().__init__(note, menu, manager)
         self.widget_manager = Note.Page5(self.frame, manager)
 
     def get_tab_name(self) -> str:
@@ -144,8 +145,8 @@ class DoubleDamageCalculatorNote(ParentFrame):
         self.widget_manager.battle_manager.team_update()
 
 class StatusCalculatorNote(ParentFrame):
-    def __init__(self, note: ttk.Notebook, menu: tk.Menu):
-        super().__init__(note, menu)
+    def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager):
+        super().__init__(note, menu, manager)
         self.widget_manager = Note.Page6(self.frame)
 
     def get_tab_name(self) -> str:
@@ -157,8 +158,8 @@ class StatusCalculatorNote(ParentFrame):
         self.menu.add_command(label=" あいことば ")
 
 class TestNote(ParentFrame):
-    def __init__(self, note: ttk.Notebook, menu: tk.Menu):
-        super().__init__(note, menu)
+    def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager):
+        super().__init__(note, menu, manager)
         self.widget_manager = Note.Page6(self.frame)
 
     def get_tab_name(self) -> str:

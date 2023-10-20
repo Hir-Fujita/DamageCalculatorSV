@@ -26,42 +26,6 @@ def save_file(path, data):
     with open(path, "wb") as f:
         pickle.dump(data, f)
 
-def save_filedialogwindow(save_name: str, title: str, parent_folder: str="") -> str:
-    save_folder = f"./{Data.FOLDER}/Data/{parent_folder}"
-    filepath = filedialog.asksaveasfilename(
-        title=title,
-        initialfile=save_name,
-        defaultextension=f".txt",
-        filetypes=[("Text File", ".txt")],
-        initialdir=save_folder
-    )
-    return filepath
-
-def open_filedialogwindow(title: str, parent_folder: str="") -> str:
-    load_folder = f"./{Data.FOLDER}/Data/{parent_folder}"
-    filepath = filedialog.askopenfilename(
-        title=title,
-        multiple=False,
-        initialdir=load_folder,
-        filetypes=[("Text File", ".txt")]
-    )
-    return filepath
-
-def metronome(name: str, mirror: bool) -> Image.Image:
-        name = name.replace("メトロノーム", "")
-        image: Image.Image = open_file(f"{Data.FOLDER}/Data/Image_data/item/メトロノーム")
-        text_image = Image.new("RGBA", (image.size[0], image.size[1]), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(text_image)
-        font = ImageFont.truetype(f"{Data.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 40)
-        draw.text((0, 0), name, fill="white", stroke_width=2, stroke_fill="black", font=font)
-        text_image = text_image.crop(text_image.split()[-1].getbbox())
-        if mirror:
-            text_image = ImageOps.mirror(text_image)
-            image.paste(text_image, (0, image.size[1]-text_image.size[1]), mask=text_image)
-        else:
-            image.paste(text_image, (image.size[0]-text_image.size[0], image.size[1]-text_image.size[1]), mask=text_image)
-        return image
-
 class ImageGenerator:
     def img_open(self, name: str, category: str, size: "tuple[int]"=None):
         if category == "poke":
@@ -287,7 +251,7 @@ class ImageGenerator:
     def create_battle_button(cls, poke: Obj.PokeDetail, mirror: bool):
         image = Image.new("RGBA", (160, 100), (0, 0, 0, 0))
         if poke.terastal_flag and poke.terastal != "":
-            terastal_img = cls.img_open(cls, poke.terastal, "terastal" (100, 100))
+            terastal_img = cls.img_open(cls, poke.terastal, "terastal", (100, 100))
             image.paste(terastal_img, (image.size[0]-terastal_img.size[0], 0))
         poke_img = cls.img_open(cls, poke.name, "poke")
         poke_img = poke_img.resize((int(poke_img.size[0]/3*2), int(poke_img.size[1]/3*2)))
@@ -323,5 +287,17 @@ class ImageGenerator:
         return ImageTk.PhotoImage(image)
 
     @classmethod
-    def create_double_banner(cls, poke_1: Obj.PokeDetail, poke_2: Obj.PokeDetail, mirror: bool=False):
-        pass
+    def create_battle_banner(cls, poke: Obj.PokeDetail, mirror: bool=False):
+        image = Image.new("RGBA", (120, 50), (0, 0, 0, 0))
+        poke_img = cls.img_open(cls, poke.name, "poke")
+        poke_img = ImageOps.mirror(poke_img)
+        poke_img = poke_img.resize((int(poke_img.size[0]/2), int(poke_img.size[1]/2)))
+        if poke_img.size[1] > image.size[1]:
+            image.paste(poke_img, (0, int(image.size[1]/2-poke_img.size[1]/2)))
+        else:
+            image.paste(poke_img, (0, image.size[1]-poke_img.size[1]))
+        if mirror:
+            image = ImageOps.mirror(image)
+        return ImageTk.PhotoImage(image)
+
+

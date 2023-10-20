@@ -16,7 +16,7 @@ import Calculation as Calc
 class Page1:
     def __init__(self, parent, manager: Manager.Manager):
         self.manager = manager
-        self.widget = Manager.StatusWidgetManager(Obj.Poke())
+        self.widget = Manager.StatusWidgetManager()
         self.widget.set_dic()
         self.widget.add_update_method(self.update)
         top_frame = tk.Frame(parent)
@@ -24,20 +24,17 @@ class Page1:
         name_frame = tk.LabelFrame(top_frame, text="ポケモン名")
         name_frame.pack(side=tk.LEFT, padx=5)
         self.widget.name_widget.create(name_frame)
-        # self.widget.name_widget.method = self.name_widget_func
         self.widget.name_widget.pack(padx=5, pady=5)
 
         level_frame = tk.LabelFrame(top_frame, text="Lv")
         level_frame.pack(side=tk.LEFT, padx=5)
         self.widget.level_widget.create(level_frame)
-        # self.widget.level_widget.method = self.update
         self.widget.level_widget.pack(padx=5, pady=5)
 
         terastal_frame = tk.LabelFrame(top_frame, text="テラスタル")
         terastal_frame.pack(side=tk.LEFT, padx=5)
         self.widget.terastal_widget.create(terastal_frame)
         self.widget.terastal_widget.config(width=10)
-        # self.widget.terastal_widget.method = self.update
         self.widget.terastal_widget.pack(padx=5, pady=5)
 
         ability_frame = tk.LabelFrame(top_frame, text="とくせい")
@@ -48,7 +45,6 @@ class Page1:
         item_frame = tk.LabelFrame(top_frame, text="もちもの")
         item_frame.pack(side=tk.LEFT, padx=5)
         self.widget.item_widget.create(item_frame)
-        # self.widget.item_widget.method = self.update
         self.widget.item_widget.pack(padx=5, pady=5)
 
         move_frame = tk.Frame(parent)
@@ -97,8 +93,9 @@ class Page1:
         self.memo_widget.pack()
 
     def generate_image(self):
-        self.img = Pr.ImageGenerator.create_page1(self.widget.poke.name, self.widget.poke.item, self.widget.poke.terastal)
-        self.img_label.config(image=self.img)
+        if self.manager.image_flag:
+            self.img = Pr.ImageGenerator.create_page1(self.widget.poke.name, self.widget.poke.item, self.widget.poke.terastal)
+            self.img_label.config(image=self.img)
 
     def name_widget_func(self):
         self.widget.name_widget_func()
@@ -120,11 +117,12 @@ class Page1:
 
     def save_poke(self):
         if self.save_check():
-            path = Data.save_filedialogwindow(f"{self.poke.name}@{self.poke.item}", "ポケモン保存", "Pokemon", ("text_file", "txt"))
+            poke = self.widget.poke
+            path = Data.save_filedialogwindow(f"{poke.name}@{poke.item}", "ポケモン保存", "Pokemon", ("text_file", "txt"))
             if path:
-                save_data = [self.poke.name, self.poke.level, self.poke.item, self.poke.ability, self.poke.terastal]
+                save_data = [poke.name, poke.level, poke.item, poke.ability, poke.terastal]
                 save_data.append("/".join([move for move in self.poke.move_list]))
-                for index, status in enumerate(self.poke.status_list):
+                for index, status in enumerate(poke.status_list):
                     if index == 0:
                         save_data.append(f"{str(status.individual)}/{str(status.effort)}")
                     else:
@@ -134,13 +132,13 @@ class Page1:
                     [f.writelines(f"{data}\n") for data in save_data]
 
     def save_check(self):
-        if self.poke.name == "":
+        if self.widget.poke.name == "":
             messagebox.showerror(title="error", message="ポケモンが選択されていません")
             return False
-        if self.poke.ability == "":
+        if self.widget.poke.ability == "":
             messagebox.showerror(title="error", message="とくせいが選択されていません")
             return False
-        if self.poke.terastal == "":
+        if self.widget.poke.terastal == "":
             messagebox.showerror(title="error", message="テラスタルが選択されていません")
             return False
         if int(self.effrot_label["text"]) < 0:
@@ -152,14 +150,14 @@ class Page1:
         path = Data.open_filedialogwindow("ポケモン読み込み", "Pokemon", ("text_file", "txt"))
         if path:
             data = Data.PokeData(path)
-            self.poke.generate(data.name)
-            self.name_widget.set(data.name)
-            self.level_widget.set(data.level)
-            self.item_widget.set(data.item)
-            self.ability_widget.set(data.ability)
-            self.terastal_widget.set(data.terastal)
-            [self.move_widgets[i].set(data.move_list[i]) for i in range(4)]
-            for index, widget in enumerate(self.status_widgets):
+            self.widget.poke.generate(data.name)
+            self.widget.name_widget.set(data.name)
+            self.widget.level_widget.set(data.level)
+            self.widget.item_widget.set(data.item)
+            self.widget.ability_widget.set(data.ability)
+            self.widget.terastal_widget.set(data.terastal)
+            [self.widget.move_widgets[i].set(data.move_list[i]) for i in range(4)]
+            for index, widget in enumerate(self.widget.status_widgets):
                 widget.individual.set(data.status[index][0])
                 widget.effort.set(data.status[index][1])
                 if index != 0:
@@ -223,14 +221,14 @@ class Page3:
 
         left_frame = tk.Frame(frame)
         left_frame.pack(side=tk.LEFT, anchor=tk.W)
-        self.left = Manager.StatusWidgetManagerPlus(Obj.PokeDetail())
-        self.left_field = Manager.PlayerFieldManager(Obj.PlayerField())
+        self.left = Manager.StatusWidgetManagerPage3()
+        self.left_field = Manager.PlayerFieldManager()
         self.create(left_frame, self.left, self.left_field, tk.LEFT)
 
         right_frame = tk.Frame(frame)
         right_frame.pack(side=tk.RIGHT, anchor=tk.E)
-        self.right = Manager.StatusWidgetManagerPlus(Obj.PokeDetail())
-        self.right_field = Manager.PlayerFieldManager(Obj.PlayerField())
+        self.right = Manager.StatusWidgetManagerPage3()
+        self.right_field = Manager.PlayerFieldManager()
         self.create(right_frame, self.right, self.right_field, tk.RIGHT)
 
         self.manager = {
@@ -238,21 +236,37 @@ class Page3:
             tk.RIGHT: self.right
         }
 
-        self.field_manager = Manager.FieldWidgetManager(Obj.Field())
+        self.field_manager = Manager.FieldWidgetManager()
         center_frame = tk.LabelFrame(frame, text="状況")
         center_frame.pack(side=tk.BOTTOM, anchor=tk.S)
-        self.field_manager.image_label.create(center_frame, False)
+        image_frame = tk.Frame(center_frame)
+        image_frame.pack(padx=5, pady=2)
+        self.field_manager.image_label.create(image_frame, False)
         self.field_manager.image_label.pack(padx=10, pady=2)
         self.field_manager.double_widget.create(center_frame)
         self.field_manager.double_widget.pack(padx=5, pady=2)
-        self.field_manager.weather_widget.create(center_frame)
-        self.field_manager.weather_widget.pack_widget(padx=5, pady=2)
-        self.field_manager.field_widget.create(center_frame)
-        self.field_manager.field_widget.pack_widget(padx=5, pady=2)
-        self.field_manager.field_ability_widget_1.create(center_frame)
-        self.field_manager.field_ability_widget_1.pack_widget(padx=5, pady=2)
-        self.field_manager.field_ability_widget_2.create(center_frame)
-        self.field_manager.field_ability_widget_2.pack_widget(padx=5, pady=2)
+        weather_frame = tk.LabelFrame(center_frame, text="天候")
+        weather_frame.pack(padx=5, pady=2)
+        self.field_manager.weather_widget.create(weather_frame)
+        self.field_manager.weather_widget.pack(padx=5, pady=2)
+        field_frame = tk.LabelFrame(center_frame, text="フィールド")
+        field_frame.pack(padx=5, pady=2)
+        self.field_manager.field_widget.create(field_frame)
+        self.field_manager.field_widget.pack(padx=5, pady=2)
+        ability_1_frame = tk.LabelFrame(center_frame, text="とくせい_1")
+        ability_1_frame.pack(padx=5, pady=2)
+        self.field_manager.field_ability_widget_1.create(ability_1_frame)
+        self.field_manager.field_ability_widget_1.pack(padx=5, pady=2)
+        ability_2_frame = tk.LabelFrame(center_frame, text="とくせい_2")
+        ability_2_frame.pack(padx=5, pady=2)
+        self.field_manager.field_ability_widget_2.create(ability_2_frame)
+        self.field_manager.field_ability_widget_2.pack(padx=5, pady=2)
+        self.field_manager.gravity_widget.create(center_frame)
+        self.field_manager.gravity_widget.pack(padx=5, pady=2)
+        self.field_manager.wonder_room_widget.create(center_frame)
+        self.field_manager.wonder_room_widget.pack(padx=5, pady=2)
+        self.field_manager.magic_room_widget.create(center_frame)
+        self.field_manager.magic_room_widget.pack(padx=5, pady=2)
         self.field_manager.config()
 
         result_frame = tk.Frame(parent)
@@ -262,7 +276,7 @@ class Page3:
         self.right.result_widget.create(result_frame)
         self.right.result_widget.pack(side=tk.LEFT, padx=2)
 
-    def create(self, frame, manager: Manager.StatusWidgetManagerPlus, field: Manager.PlayerFieldManager, side):
+    def create(self, frame, manager: Manager.StatusWidgetManagerPage3, field: Manager.PlayerFieldManager, side):
         out_frame = tk.Frame(frame)
         out_frame.pack(side=side, padx=5)
         manager.button_widget.create(out_frame, side, self.change)
@@ -271,26 +285,36 @@ class Page3:
         in_frame.pack(side=side, padx=5)
         top_frame = tk.Frame(in_frame)
         top_frame.pack()
-        manager.name_widget.create(top_frame)
-        manager.name_widget.pack_widget(tk.LEFT)
-        manager.level_widget.create(top_frame)
-        manager.level_widget.pack_widget(tk.LEFT)
-        manager.item_widget.create(top_frame)
+        name_frame = tk.LabelFrame(top_frame, text="ポケモン名")
+        name_frame.pack(side=tk.LEFT)
+        manager.name_widget.create(name_frame)
+        manager.name_widget.pack(padx=5, pady=5)
+        level_frame = tk.LabelFrame(top_frame, text="Lv")
+        level_frame.pack(side=tk.LEFT)
+        manager.level_widget.create(level_frame)
+        manager.level_widget.pack(padx=5, pady=5)
+        item_frame = tk.LabelFrame(top_frame, text="もちもの")
+        item_frame.pack(side=tk.LEFT)
+        manager.item_widget.create(item_frame)
         manager.item_widget.config(width=14)
-        manager.item_widget.pack_widget(tk.LEFT)
+        manager.item_widget.pack(padx=5, pady=5)
 
         frame_2 = tk.Frame(in_frame)
         frame_2.pack()
-        manager.ability_widget.create(frame_2)
+        ability_frame = tk.LabelFrame(frame_2, text="とくせい")
+        ability_frame.pack(side=tk.LEFT)
+        manager.ability_widget.create(ability_frame)
         manager.ability_widget.config(width=12)
-        manager.ability_widget.pack_widget(tk.LEFT)
-        manager.ability_widget.widget.add_tuggle_button(manager.ability_widget, "特性発動", manager.update)
-        manager.ability_widget.widget.t_button.pack(side=tk.LEFT, padx=5)
-        manager.terastal_widget.create(frame_2)
+        manager.ability_widget.pack(side=tk.LEFT, padx=5, pady=5)
+        manager.ability_widget.add_tuggle_button(ability_frame, "特性発動", manager.update)
+        manager.ability_widget.t_button.pack(side=tk.LEFT, padx=5)
+        terastal_frame = tk.LabelFrame(frame_2, text="テラスタル")
+        terastal_frame.pack(side=tk.LEFT)
+        manager.terastal_widget.create(terastal_frame)
         manager.terastal_widget.config(width=12)
-        manager.terastal_widget.pack_widget(tk.LEFT, padx=5)
-        manager.terastal_widget.widget.add_tuggle_button(manager.terastal_widget, "テラスタル", manager.update)
-        manager.terastal_widget.widget.t_button.pack(side=tk.LEFT, padx=5)
+        manager.terastal_widget.pack(side=tk.LEFT, padx=5, pady=5)
+        manager.terastal_widget.add_tuggle_button(terastal_frame, "テラスタル", manager.update)
+        manager.terastal_widget.t_button.pack(side=tk.LEFT, padx=5)
 
         frame_3 = tk.Frame(in_frame)
         frame_3.pack()
@@ -338,13 +362,17 @@ class Page3:
         frame_4_1.pack(side=side)
         frame4_1_top = tk.Frame(frame_4_1)
         frame4_1_top.pack()
-        manager.hp_now_widget.create(frame4_1_top)
-        manager.hp_now_widget.pack(side=side)
-        manager.hp_now_widget.widget.pack(side=tk.LEFT)
-        manager.hp_now_widget.widget.label.pack(side=tk.LEFT)
-        manager.hp_now_widget.widget.max_label.pack(side=tk.LEFT)
-        manager.bad_stat_widget.create(frame4_1_top)
-        manager.bad_stat_widget.pack_widget(side)
+        hp_now_frame = tk.LabelFrame(frame4_1_top, text="現在HP")
+        hp_now_frame.pack(side=side)
+        manager.hp_now_widget.create(hp_now_frame, ("Meiryo UI", 16))
+        manager.hp_now_widget.pack(side=tk.LEFT)
+        manager.hp_now_widget.pack(side=tk.LEFT)
+        manager.hp_now_widget.label.pack(side=tk.LEFT)
+        manager.hp_now_widget.max_label.pack(side=tk.LEFT)
+        bad_stat_frame = tk.LabelFrame(frame4_1_top, text="状態異常")
+        bad_stat_frame.pack(side=tk.LEFT, padx=5)
+        manager.bad_stat_widget.create(bad_stat_frame)
+        manager.bad_stat_widget.pack(padx=5, pady=5)
         move_frame = tk.LabelFrame(frame_4_1, text="わざ")
         move_frame.pack()
         for index, widget in enumerate(manager.move_widgets):
@@ -355,7 +383,7 @@ class Page3:
             widget.button.grid(row=index, column=1, padx=3, pady=2)
             widget.add_tuggle_button(move_frame, "ロック", lambda index=index:self.damage_calc(side, index, True))
             widget.t_button.grid(row=index, column=2, padx=3, pady=2)
-        manager.config()
+        manager.set_dic()
         field.config()
 
     def damage_calc(self, side: str, move_index: int, lock: bool=False):
@@ -386,13 +414,13 @@ class Page3:
                 calculator.calculation()
                 widget.update(calculator)
                 target.hp_now = before_hp
-                self.manager[not_side].hp_now_widget.widget.set(before_hp)
+                self.manager[not_side].hp_now_widget.set(before_hp)
         else:
             self.manager[side].move_widgets[move_index].t_button.set(False)
             widget.reset()
 
     def change(self, side: str, index: int):
-        self.manager[side].name_widget.widget.values_reset()
+        self.manager[side].name_widget.values_reset()
         main_poke = self.manager[side].poke.copy()
         button_poke = self.manager[side].button_widget.copy(index)
         self.manager[side].poke.paste(button_poke)
@@ -446,22 +474,59 @@ class Page5:
 
         right_frame = tk.Frame(parent)
         right_frame.pack(side=tk.RIGHT)
-        self.battle_manager.right.party_widget.create(right_frame, self.manager.party)
+        self.battle_manager.right.party_widget.create(right_frame, self.manager.enemy)
 
         top_frame = tk.Frame(parent)
         top_frame.pack()
+        [btn.create(top_frame) for btn in self.battle_manager.left.banners]
+        [btn.pack(side=tk.LEFT, padx=5) for btn in self.battle_manager.left.banners]
+        [btn.create(top_frame) for btn in self.battle_manager.right.banners]
+        [btn.pack(side=tk.RIGHT, padx=5) for btn in self.battle_manager.right.banners]
         self.battle_manager.timer_widget.create(top_frame, self.manager.master)
+        self.battle_manager.timer_widget.pack(side=tk.TOP, padx=5)
 
         middle_frame = tk.Frame(parent)
         middle_frame.pack()
-        middle_left_frames = [tk.LabelFrame(middle_frame, relief=tk.SOLID, bd=2, text=i) for i in range(2)]
-        [frame.pack(side=tk.LEFT, fill="both", expand=True, padx=5) for frame in middle_left_frames]
-        self.battle_manager.left.create(middle_left_frames)
+        middle_left_frame = tk.Label(middle_frame)
+        middle_left_frame.pack(side=tk.LEFT)
+        self.battle_manager.left.create(middle_left_frame)
 
-        middle_right_frames = [tk.LabelFrame(middle_frame, relief=tk.SOLID, bd=2, text=i) for i in range(2)]
-        [frame.pack(side=tk.RIGHT, fill="both", expand=True, padx=5) for frame in middle_right_frames]
-        self.battle_manager.right.create(middle_right_frames)
+        middle_right_frame = tk.Label(middle_frame)
+        middle_right_frame.pack(side=tk.RIGHT)
+        self.battle_manager.right.create(middle_right_frame)
 
+        bottom_frame = tk.Frame(parent)
+        bottom_frame.pack()
+        bottom_left_frame = tk.Frame(bottom_frame)
+        bottom_left_frame.pack(side=tk.LEFT, fill="both", expand=True)
+        self.battle_manager.left.player_create(bottom_left_frame)
+
+        bottom_right_frame = tk.Frame(bottom_frame)
+        bottom_right_frame.pack(side=tk.RIGHT, fill="both", expand=True)
+        self.battle_manager.right.player_create(bottom_right_frame)
+
+        bottom_center_frame = tk.LabelFrame(bottom_frame, text="状況")
+        bottom_center_frame.pack()
+        b_frame_1 = tk.Frame(bottom_center_frame)
+        b_frame_1.pack()
+        self.battle_manager.field.double_widget.variable.set(True)
+        weather_frame = tk.LabelFrame(b_frame_1, text="天候")
+        weather_frame.pack(side=tk.LEFT, padx=5)
+        self.battle_manager.field.weather_widget.create(weather_frame)
+        self.battle_manager.field.weather_widget.pack(side=tk.LEFT, padx=2, pady=2)
+        field_frame = tk.LabelFrame(b_frame_1, text="フィールド")
+        field_frame.pack(side=tk.LEFT, padx=5)
+        self.battle_manager.field.field_widget.create(field_frame)
+        self.battle_manager.field.field_widget.pack(side=tk.LEFT, padx=2, pady=2)
+        b_frame_2 = tk.Frame(bottom_center_frame)
+        b_frame_2.pack()
+        self.battle_manager.field.gravity_widget.create(b_frame_2)
+        self.battle_manager.field.gravity_widget.pack(side=tk.LEFT, padx=5, pady=2)
+        self.battle_manager.field.wonder_room_widget.create(b_frame_2)
+        self.battle_manager.field.wonder_room_widget.pack(side=tk.LEFT, padx=5, pady=2)
+        self.battle_manager.field.magic_room_widget.create(b_frame_2)
+        self.battle_manager.field.magic_room_widget.pack(side=tk.LEFT, padx=5, pady=2)
+        self.battle_manager.field.config()
 
 class Page6:
     def __init__(self, parent):

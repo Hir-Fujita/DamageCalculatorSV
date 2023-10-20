@@ -12,6 +12,7 @@ import Data
 import Object as Obj
 import Process as Pr
 import Calculation as Calc
+import Manager
 
 class CustomLabel(tk.Label):
     def __init__(self, parent=None, *args, **kwargs):
@@ -164,10 +165,8 @@ class CustomCommboBox(ttk.Combobox):
         if len(values) == 1:
             self.set(values[0])
 
-
 class CustomSpinBox(tk.Spinbox):
-    def __init__(self, method: Callable=None,
-                 *args, **kwargs):
+    def __init__(self, method: Callable=None, *args, **kwargs):
         self.method = method
         self.increment: int
         self.variable: tk.IntVar
@@ -336,20 +335,28 @@ class CustomHPNowBox(CustomSpinBox):
         if parent is not None:
             self.create(parent)
 
-    def create(self, parent):
+    def create(self, parent, font=None):
         tk.Spinbox.__init__(self, parent, *self.args, **self.kwargs)
-        self.config(textvariable=self.now_variable, font=("Meiryo UI", 16), width=3,
-                    command=self.run_method, from_=1, to=1)
+        self.config(textvariable=self.now_variable, width=3, command=self.run_method, from_=1, to=1)
         self.bind("<MouseWheel>", lambda event: self.mousewheel(event))
         self.bind("<Button-3>", lambda event: self.rightclick())
         self.bind("<KeyRelease>", lambda event: self.key_input())
-        self.label = tk.Label(parent, text="/", font=("Meiryo UI", 16))
-        self.max_label = tk.Label(parent, textvariable=self.max_variable, font=("Meiryo UI", 16), width=3)
+        self.label = tk.Label(parent, text="/")
+        self.max_label = tk.Label(parent, textvariable=self.max_variable, width=3)
+        if font is not None:
+            self.config(font=font)
+            self.label.config(font=font)
+            self.max_label.config(font=font)
+
+    def create_slider(self, parent):
+        self.slider = ttk.Scale(parent, orient="horizontal", variable=self.now_variable, from_=0, to=1,
+                                length=210, command=lambda event: self.scale())
 
     def max_set(self, value: int):
         self.max_variable.set(value)
         self.config(to=value)
         self.now_variable.set(value)
+        self.slider.config(to=value)
 
     def set(self, now: int, max: int=None):
         if max is not None:
@@ -383,14 +390,31 @@ class CustomHPNowBox(CustomSpinBox):
         self.now_variable.set(self.value_check(self.now_variable.get()))
         self.run_method()
 
-class CustomHPSlider(ttk.Scale):
+    def scale(self):
+        print(self.now_variable.get())
+
+
+class CustomCountBox(CustomSpinBox):
+    def __init__(self, parent=None, method: Callable=None, max: int=1,
+                 *args, **kwargs):
+        CustomSpinBox.__init__(self, method, *args, **kwargs)
+        self.variable = tk.IntVar(value=1)
+        self.max = max
+        self.min = 0
+        self.increment = 1
+        if parent is not None:
+            self.create(parent)
+
     def create(self, parent):
-        ttk.Scale.__init__(self, parent, orient="horizontal", from_=0, to=1, length=150,
-                           command=lambda event: self.test())
+        super().create(parent)
+        self.config(width=3)
+        self.variable.set(self.max)
 
-    def test(self):
-        print(self.get())
-
+    def set(self, value: int, max_value: int=None):
+        self.variable.set(value)
+        if max_value is not None:
+            self.max = max_value
+            self.config(to=max_value)
 
 class CustomCommboButtonBox(CustomCommboBox):
     def __init__(self, values: Data.CSV=None, parent=None, method: Callable=None,
@@ -410,8 +434,7 @@ class CustomCommboButtonBox(CustomCommboBox):
 class CustomButton(tk.Button):
     def __init__(self, text: str, parent=None, method: Callable=None,
                  *args, **kwargs):
-        self.text = text
-        self.variable = tk.BooleanVar(value=False)
+        self.variable = tk.StringVar(value=text)
         self.method = method
         self.args = args
         self.kwargs = kwargs
@@ -421,11 +444,14 @@ class CustomButton(tk.Button):
     def create(self, parent, method: Callable=None):
         if method is not None:
             self.method = method
-        tk.Button.__init__(self, parent, text=self.text, *self.args, **self.kwargs)
+        tk.Button.__init__(self, parent, textvariable=self.variable, *self.args, **self.kwargs)
         self.config(command=self.click)
 
     def click(self):
         self.method()
+
+    def set(self, value: str):
+        self.variable.set(value)
 
 
 class CustomTuggleButton(tk.Button):
@@ -553,7 +579,7 @@ class BannerWidget:
         self.widget.bind("<Leave>", lambda event: self.off_mouse())
 
     def click(self):
-        path = Pr.open_filedialogwindow("ポケモン選択", "Pokemon")
+        path = Data.open_filedialogwindow("ポケモン選択", "Pokemon", ("text_file", "txt"))
         if path:
             self.data = Data.PokeData(path)
             self.load()
@@ -686,7 +712,6 @@ class Timer_widget(tk.Button):
     def create(self, parent, master: tk.Tk):
         self.master = master
         tk.Button.__init__(self, parent, image=self.image, command=self.click, font=("Mairyo UI", 20, "bold"))
-        self.pack(padx=5)
 
     def set(self, minit: str, second: str):
         self.image = Pr.ImageGenerator.create_time(minit, second)
@@ -735,12 +760,15 @@ class ButtlePokeButton(tk.Button):
 
     def create(self, parent, poke: Obj.PokeDetail):
         self.poke = poke
-        tk.Button.__init__(self, parent)
+        tk.Button.__init__(self, parent, command=self.func)
         self.update()
 
     def update(self):
         self.image = Pr.ImageGenerator.create_battle_button(self.poke, self.mirror)
         self.config(image=self.image)
+
+    def func(self):
+        print(self.poke.name, self.index)
 
 class ChangePokeWidget:
     def __init__(self, side: str):
@@ -777,21 +805,113 @@ class BattleHPWidgets:
         self.width = width
         self.max_result = BattleHPWidget(width, "特化")
         self.min_result = BattleHPWidget(width, "無振")
-        self.calc_result = BattleHPWidget(width, "入力ステータス")
-        self.widgets = [self.max_result, self.min_result, self.calc_result]
+        self.calc_result = BattleHPWidget(width, "入力")
+        self.now_widget = CustomHPNowBox()
+
 
     def create(self, parent):
-        [widget.create(parent) for widget in self.widgets]
+        self.max_result.create(parent)
+        self.max_result.pack()
+        self.min_result.create(parent)
+        self.min_result.pack()
+        self.calc_result.create(parent)
+        self.calc_result.pack()
+        self.now_widget.create_slider(parent)
+        self.now_widget.slider.pack()
 
 class BattleWidget:
-    def __init__(self, poke: Obj.PokeDetail, side: str, width: float):
-        self.poke = poke
+    def __init__(self, side: str, battle_type: int):
+        self.poke = Obj.PokeDetail()
         self.side = side
-        self.width = width
-        self.hp_widget = BattleHPWidgets(side, width)
+        self.battle_type = battle_type
+        self.width = 1 / battle_type
+        self.hp_widget = BattleHPWidgets(side, self.width)
+        self.widget = Manager.StatusWidgetManagerBattle(self.side)
 
     def create(self, parent):
-        self.hp_widget.create(parent)
+        top_frame = tk.Frame(parent)
+        top_frame.pack()
+        self.hp_widget.create(top_frame)
+
+        middle_2_frame = tk.Frame(parent)
+        middle_2_frame.pack()
+        terastal_frame = tk.LabelFrame(middle_2_frame, text="テラスタル")
+        terastal_frame.grid(row=0, column=0)
+        self.widget.terastal_widget.create(terastal_frame)
+        self.widget.terastal_widget.config(width=6)
+        self.widget.terastal_widget.pack(side=tk.LEFT, padx=5)
+        self.widget.terastal_widget.add_tuggle_button(terastal_frame, "テラスタル", self.widget.update)
+        self.widget.terastal_widget.t_button.pack(side=tk.LEFT, padx=5)
+        hp_now_frame = tk.LabelFrame(middle_2_frame, text="現在HP")
+        hp_now_frame.grid(row=0, column=1)
+        self.hp_widget.now_widget.create(hp_now_frame)
+        self.hp_widget.now_widget.pack(side=tk.LEFT)
+        self.hp_widget.now_widget.label.pack(side=tk.LEFT)
+        self.hp_widget.now_widget.max_label.pack(side=tk.LEFT)
+        ability_frame = tk.LabelFrame(middle_2_frame, text="とくせい")
+        ability_frame.grid(row=1, column=0)
+        self.widget.ability_widget.create(ability_frame)
+        self.widget.ability_widget.config(width=12)
+        self.widget.ability_widget.pack(side=tk.LEFT)
+        self.widget.ability_widget.add_tuggle_button(ability_frame, "発動", self.widget.update)
+        self.widget.ability_widget.t_button.pack(side=tk.LEFT)
+        bad_stat_frame = tk.LabelFrame(middle_2_frame, text="状態異常")
+        bad_stat_frame.grid(row=1, column=1)
+        self.widget.bad_stat_widget.create(bad_stat_frame)
+        self.widget.bad_stat_widget.pack()
+        item_frame = tk.LabelFrame(middle_2_frame, text="もちもの")
+        item_frame.grid(row=2, column=0)
+        self.widget.item_widget.create(item_frame)
+        self.widget.item_widget.config(width=14)
+        self.widget.item_widget.pack(side=tk.LEFT, padx=5)
+        self.widget.move_flag_widget.create(middle_2_frame)
+        self.widget.move_flag_widget.config(width=8)
+        self.widget.move_flag_widget.grid(row=2, column=1)
+        if self.side == tk.LEFT:
+            self.widget.terastal_widget.config(state="disable")
+
+        middle_frame = tk.Frame(parent)
+        middle_frame.pack()
+        font = ("MeiryoUI", 10)
+        for i in range(6):
+            self.widget.status_widgets[i].status_label.create(middle_frame)
+            self.widget.status_widgets[i].status_label.config(width=3, font=("MeiryoUI", 12, "bold"))
+            self.widget.status_widgets[i].status_label.grid(row=0, column=i)
+            self.widget.status_widgets[i].individual.create(middle_frame)
+            self.widget.status_widgets[i].individual.config(width=3, font=font)
+            self.widget.status_widgets[i].effort.create(middle_frame)
+            self.widget.status_widgets[i].effort.config(width=3, font=font)
+            self.widget.status_widgets[i].individual.grid(row=1, column=i, padx=2, pady=1)
+            self.widget.status_widgets[i].effort.grid(row=2, column=i)
+            if self.side == tk.LEFT:
+                self.widget.status_widgets[i].individual.disabled()
+                self.widget.status_widgets[i].effort.disabled()
+            if i != 0:
+                self.widget.rank_widgets[i-1].create(middle_frame)
+                self.widget.rank_widgets[i-1].config(width=3, font=font)
+                self.widget.rank_widgets[i-1].grid(row=3, column=i, padx=2, pady=1)
+
+        bottom_frame = tk.LabelFrame(parent, text="わざ")
+        bottom_frame.pack()
+        for index, wid in enumerate(self.widget.move_widgets):
+            wid.create(bottom_frame)
+            self.widget.move_counter_widgets[index].create(bottom_frame)
+            wid.config(width=14)
+            wid.add_button(bottom_frame, "計算", lambda index=index: print(index))
+            wid.grid(row=index, column=0)
+            self.widget.move_counter_widgets[index].grid(row=index, column=1, padx=5, pady=2)
+            wid.button.grid(row=index, column=2)
+        self.widget.set_dic()
 
 
+class BannerWidgetPage3(tk.Button):
+    def __init__(self, side: str):
+        self.mirror = False if side == tk.LEFT else True
+        self.image = Pr.ImageGenerator.create_battle_banner(Obj.PokeDetail(), self.mirror)
 
+    def create(self, parent):
+        tk.Button.__init__(self, parent, image=self.image)
+
+    def update(self, poke: Obj.PokeDetail):
+        self.image = Pr.ImageGenerator.create_battle_banner(poke, self.mirror)
+        self.config(image=self.image)

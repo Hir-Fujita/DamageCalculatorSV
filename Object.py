@@ -117,6 +117,9 @@ class Poke:
             data = Data.POKEDATA.find(self.name, "name")
             [status.generate(data[5: 11][index]) for index, status in enumerate(self.status_list)]
             self.ability_list = [Data for Data in data[11: 14] if Data]
+            if "そうだいしょう" in self.ability_list:
+                add_list = [f"そうだいしょう+{i+1}" for i in range(5)]
+                self.ability_list = self.ability_list + add_list
         else:
             [status.reset() for status in self.status_list]
         self.ability = ""
@@ -226,6 +229,8 @@ class PokeDetail(Poke):
             "move": [move for move in self.move_list],
             "rank": [rank for rank in self.rank_list],
             "terastal_flag": self.terastal_flag,
+            "ability_flag": self.ability_flag,
+            "move_flag": self.move_flag,
             "bad_stat": self.bad_stat,
             "hp_now": self.hp_now,
             "hp_result": self.hp_result
@@ -247,6 +252,8 @@ class PokeDetail(Poke):
         self.move_list = dic["move"]
         self.rank_list = dic["rank"]
         self.terastal_flag = dic["terastal_flag"]
+        self.ability_flag = dic["ability_flag"]
+        self.move_flag = dic["move_flag"]
         self.bad_stat = dic["bad_stat"]
         self.hp_now = dic["hp_now"]
         self.hp_result = dic["hp_result"]
