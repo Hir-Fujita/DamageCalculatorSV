@@ -858,7 +858,7 @@ class DamageCalculator:
                     num = my_round5(num * 8192 / 4096)
                     self.calc_log.insert(0, f"攻撃側: {self.attacker.ability}")
             else:
-                if self.attacker.terastal_flag and self.attacker.terastal == self.move_type and self.move_type in self.attacker_type:
+                if self.attacker.terastal_flag and self.attacker.terastal == self.move_type and self.move_type in self.attacker_type[:2]:
                     num = my_round5(num * 8192 / 4096)
                     self.calc_log.insert(0, "攻撃側: タイプ一致テラスタル")
                 elif self.move_type in self.attacker_type:

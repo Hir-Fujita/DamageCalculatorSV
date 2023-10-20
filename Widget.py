@@ -8,17 +8,16 @@ import time
 import threading as th
 import math
 
-import Data as D
+import Data
 import Object as Obj
 import Process as Pr
 import Calculation as Calc
-
 
 class CustomLabel(tk.Label):
     def __init__(self, parent=None, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
-        self.variable = tk.StringVar(value=0)
+        self.variable = tk.StringVar(value=1)
         if parent is not None:
             self.create(parent)
 
@@ -115,7 +114,7 @@ class CustomNatureBox(tk.Button):
 
 
 class CustomCommboBox(ttk.Combobox):
-    def __init__(self, values: D.CSV=None, parent=None, method: Callable=None, *args, **kwargs):
+    def __init__(self, values: Data.CSV=None, parent=None, method: Callable=None, *args, **kwargs):
         self.values = values
         self.method = method
         self.args = args
@@ -126,7 +125,7 @@ class CustomCommboBox(ttk.Combobox):
 
     def create(self, parent):
         ttk.Combobox.__init__(self, parent, textvariable=self.variable, *self.args, **self.kwargs, font=("Meiryo UI", 10))
-        if isinstance(self.values, D.CSV):
+        if isinstance(self.values, Data.CSV):
             self.config(values=self.values.name_list)
             self.bind("<KeyRelease-BackSpace>", lambda event:self.values_update(False))
             self.bind("<KeyRelease-Return>", lambda event:self.values_update(True))
@@ -144,7 +143,7 @@ class CustomCommboBox(ttk.Combobox):
 
     def reset(self):
         self.set("")
-        if isinstance(self.values, D.CSV):
+        if isinstance(self.values, Data.CSV):
             self.config(values=self.values.name_list)
         else:
             self.config(values=self.values)
@@ -220,6 +219,15 @@ class CustomSpinBox(tk.Spinbox):
     def key_input(self):
         self.set(self.value_check(self.variable.get()))
         self.run_method()
+
+    def disabled(self):
+        self.bind("<MouseWheel>", lambda event: self.dummy_function())
+        self.bind("<Button-3>", lambda event: self.dummy_function())
+        self.bind("<KeyRelease>", lambda event: self.dummy_function())
+        self.config(state=tk.DISABLED)
+
+    def dummy_function(self):
+        pass
 
 
 class CustomLevelBox(CustomSpinBox):
@@ -375,9 +383,17 @@ class CustomHPNowBox(CustomSpinBox):
         self.now_variable.set(self.value_check(self.now_variable.get()))
         self.run_method()
 
+class CustomHPSlider(ttk.Scale):
+    def create(self, parent):
+        ttk.Scale.__init__(self, parent, orient="horizontal", from_=0, to=1, length=150,
+                           command=lambda event: self.test())
+
+    def test(self):
+        print(self.get())
+
 
 class CustomCommboButtonBox(CustomCommboBox):
-    def __init__(self, values: D.CSV=None, parent=None, method: Callable=None,
+    def __init__(self, values: Data.CSV=None, parent=None, method: Callable=None,
                  *args, **kwargs):
         super().__init__(values, parent, method, *args, **kwargs)
 
@@ -494,52 +510,6 @@ class CustomImageLabelPage3(tk.Label):
         self.config(image=self.image)
 
 
-CUSTOM_WIDGET = Union[
-    CustomCommboBox,
-    CustomEffortBox,
-    CustomIndividualBox,
-    CustomLevelBox,
-    CustomLabel,
-    CustomTextBox,
-    CustomRankBox,
-    CustomCommboButtonBox,
-    CustomButton,
-    CustomTuggleButton,
-    CustomHPNowBox,
-    CustomImageLabel,
-    CustomImageLabelPage3
-]
-
-
-class CustomFrame(tk.LabelFrame):
-    def __init__(self, widget: CUSTOM_WIDGET, parent=None, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-        self.widget = widget
-        if parent is not None:
-            self.create(self)
-
-    def create(self, parent, label: bool=True):
-        if label:
-            tk.LabelFrame.__init__(self, parent, *self.args, **self.kwargs)
-        else:
-            tk.Frame.__init__(self, parent, *self.args, **self.kwargs)
-        self.widget.create(self)
-
-    def get(self):
-        return self.widget.get()
-
-    def set(self, value: Union[int, str]):
-        self.widget.set(value)
-
-    def config(self, **kw):
-        self.widget.config(kw)
-
-    def pack_widget(self, anchor=tk.TOP, padx=0, pady=0, inner_pad=5):
-        self.widget.pack(pady=inner_pad, padx=inner_pad, side=tk.LEFT)
-        self.pack(side=anchor, padx=padx, pady=pady)
-
-
 class StatusWidget:
     def __init__(self, status: Union[Obj.StatusHP, Obj.Status], method: Callable):
         self.status = status
@@ -569,216 +539,12 @@ class StatusWidget:
         if isinstance(self.status, Obj.Status):
             self.status_label.color_change(self.nature.variable.get())
 
-    def grid(self, anchor: str, start_index: int, freeze_index: int, padx: int=0, pady: int=0):
-        if anchor == "x":
-            self.status_label.grid(row=freeze_index, column=start_index, padx=padx, pady=pady)
-            self.individual.grid(row=freeze_index, column=start_index+1, padx=padx, pady=pady)
-            self.effort.slider.grid(row=freeze_index, column=start_index+2, padx=padx, pady=pady)
-            self.effort.grid(row=freeze_index, column=start_index+3, padx=padx, pady=pady)
-            if isinstance(self.status, Obj.Status):
-                self.nature.grid(row=freeze_index, column=start_index+4, padx=padx, pady=pady)
-
-
-class StatusWidgetManager:
-    def __init__(self, poke: Obj.Poke):
-        self.poke = poke
-        self.name_widget = CustomFrame(CustomCommboBox(D.POKEDATA, method=self.name_widget_func), text="ポケモン名")
-        self.level_widget = CustomFrame(CustomLevelBox(method=self.update), text="Lv")
-        self.ability_widget = CustomFrame(CustomCommboBox(method=self.update), text="とくせい")
-        self.item_widget = CustomFrame(CustomCommboBox(D.ITEMDATA, method=self.update), text="もちもの")
-        self.terastal_widget = CustomFrame(CustomCommboBox(D.TYPEDATA.list, method=self.update), text="テラスタル")
-        self.move_widgets = [CustomFrame(CustomCommboBox(D.MOVEDATA, method=self.update), text=f"技_{i+1}") for i in range(4)]
-        self.status_widgets = [StatusWidget(status, self.children_method) for status in self.poke.status_list]
-
-    def config(self):
-        self.poke.config(
-            self.name_widget.widget.variable,
-            self.item_widget.widget.variable,
-            self.terastal_widget.widget.variable,
-            self.ability_widget.widget.variable,
-            self.level_widget.widget.variable,
-            [widget.individual.variable for widget in self.status_widgets],
-            [widget.effort.variable for widget in self.status_widgets],
-            [widget.nature.variable for index, widget in enumerate(self.status_widgets) if index != 0],
-            [widget.widget.variable for widget in self.move_widgets]
-        )
-
-    def update(self):
-        self.poke.update()
-        [widget.set_label() for widget in self.status_widgets]
-
-    def name_widget_func(self):
-        if self.name_widget.get() in D.POKEDATA.name_list:
-            self.poke.generate(self.name_widget.get())
-            self.ability_widget.widget.reset()
-            self.ability_widget.widget.values_config(self.poke.ability_list)
-            self.item_widget.widget.reset()
-            self.terastal_widget.widget.reset()
-            [widget.widget.reset() for widget in self.move_widgets]
-            [widget.reset() for widget in self.status_widgets]
-            self.auto_pokemon_item()
-            self.update()
-
-    def auto_pokemon_item(self):
-        name = self.name_widget.get()
-        result = [data for data in D.ITEM_POKE if data[0] == name]
-        if len(result) > 0:
-            self.item_widget.set(result[0][1])
-            self.terastal_widget.set(result[0][2])
-
-    def children_method(self, flag: Union[bool, float]=False):
-        if flag == 1.1:
-            [widget.nature.set(1) for widget in self.status_widgets[1:] if widget.nature.get() == 1.1]
-        elif flag == 0.9:
-            [widget.nature.set(1) for widget in self.status_widgets[1:] if widget.nature.get() == 0.9]
-        [widget.status_label.color_change(widget.nature.get()) for widget in self.status_widgets[1:]]
-        self.update()
-
-class StatusWidgetManagerPlus(StatusWidgetManager):
-    def __init__(self, poke: Obj.PokeDetail):
-        super().__init__(poke)
-        self.poke = poke
-        self.ability_widget = CustomFrame(CustomCommboButtonBox(method=self.update), text="とくせい")
-        self.terastal_widget = CustomFrame(CustomCommboButtonBox(D.TYPEDATA.list, method=self.update), text="テラスタル")
-        self.move_widgets = [CustomCommboButtonBox(D.MOVEDATA, method=self.update) for i in range(4)]
-        self.rank_widgets = [CustomRankBox(method=self.update) for i in range(5)]
-        self.move_flag_widget = CustomTuggleButton("技効果", method=self.update, width=10)
-        self.bad_stat_widget = CustomFrame(CustomCommboBox(D.BADSTAT, method=self.update, width=6), text="状態異常")
-        self.image_label = CustomImageLabelPage3()
-        self.hp_now_widget = CustomFrame(CustomHPNowBox(method=self.hp_now_update), text="現在HP")
-        self.result_widget = ResultWidget()
-        self.button_widget = ChangeButtonWidget(7)
-
-    def name_widget_func(self):
-        if self.name_widget.get() in D.POKEDATA.name_list:
-            self.poke.generate(self.name_widget.get())
-            self.ability_widget.widget.reset()
-            self.ability_widget.widget.values_config(self.poke.ability_list)
-            self.item_widget.widget.reset()
-            self.terastal_widget.widget.reset()
-            [widget.reset() for widget in self.move_widgets]
-            [widget.reset() for widget in self.status_widgets]
-            [widget.reset() for widget in self.rank_widgets]
-            self.ability_widget.widget.t_button.reset()
-            self.terastal_widget.widget.t_button.reset()
-            self.bad_stat_widget.widget.reset()
-            self.move_flag_widget.reset()
-            self.auto_pokemon_item()
-            self.update()
-            self.image_update()
-
-    def config(self):
-        self.poke.config(
-            self.name_widget.widget,
-            self.item_widget.widget,
-            self.terastal_widget.widget,
-            self.ability_widget.widget,
-            self.level_widget.widget,
-            [widget.individual for widget in self.status_widgets],
-            [widget.effort for widget in self.status_widgets],
-            [widget.nature for index, widget in enumerate(self.status_widgets) if index != 0],
-            [widget for widget in self.move_widgets],
-            [widget for widget in self.rank_widgets],
-            self.terastal_widget.widget.t_button,
-            self.move_flag_widget,
-            self.ability_widget.widget.t_button,
-            self.bad_stat_widget.widget
-        )
-
-    def update(self):
-        self.poke.update()
-        [widget.set_label() for widget in self.status_widgets]
-        self.image_update()
-        self.hp_now_widget.widget.set(self.poke.hp_now, self.poke.status_list[0].value)
-        self.result_widget.image_update(self.status_widgets[0].status.value, 0, 0)
-
-    def widget_update(self):
-        self.name_widget.set(self.poke.name)
-        self.item_widget.set(self.poke.item)
-        self.terastal_widget.set(self.poke.terastal)
-        self.ability_widget.set(self.poke.ability)
-        self.ability_widget.widget.config(values=self.poke.ability_list)
-        self.level_widget.set(self.poke.level)
-        for index, status in enumerate(self.status_widgets):
-            status.individual.set(self.poke.status_list[index].individual)
-            status.effort.set(self.poke.status_list[index].effort)
-            if index != 0:
-                status.nature.set(self.poke.status_list[index].nature)
-        for index, widget in enumerate(self.move_widgets):
-            widget.set(self.poke.move_list[index])
-        for index, widget in enumerate(self.rank_widgets):
-            widget.set(self.poke.rank_list[index])
-        self.terastal_widget.widget.t_button.set(self.poke.terastal_flag)
-        self.bad_stat_widget.set(self.poke.bad_stat)
-        self.image_update()
-        for index, status in enumerate(self.status_widgets):
-            status.set_label()
-        self.hp_now_widget.widget.set(self.poke.hp_now, self.poke.status_list[0].value)
-        hp = self.poke.status_list[0].value
-        self.result_widget.image_update(hp, hp-self.poke.hp_now, hp-self.poke.hp_now)
-
-    def hp_now_update(self):
-        self.poke.hp_now = self.hp_now_widget.widget.now_variable.get()
-        hp = self.poke.status_list[0].value
-        self.result_widget.image_update(hp, hp-self.poke.hp_now, hp-self.poke.hp_now)
-
-    def image_update(self):
-        terastal = ""
-        if self.terastal_widget.widget.get_variable():
-            terastal = self.terastal_widget.get()
-        self.image_label.update(self.name_widget.get(), self.item_widget.get(), terastal)
-
-class PlayerFieldManager:
-    def __init__(self, player_data: Obj.PlayerField):
-        self.player = player_data
-        self.a_wall_widget = CustomTuggleButton("リフレクター", method=self.update, width=10)
-        self.c_wall_widget = CustomTuggleButton("ひかりのかべ", method=self.update, width=10)
-        self.wind_widget = CustomTuggleButton("おいかぜ", method=self.update, width=10)
-        self.help_widget = CustomTuggleButton("てだすけ", method=self.update, width=10)
-        self.crit_widget = CustomTuggleButton("被急所", method=self.update, width=10)
-
-    def config(self):
-        self.player.config(
-            self.a_wall_widget,
-            self.c_wall_widget,
-            self.wind_widget,
-            self.help_widget,
-            self.crit_widget,
-        )
-
-    def update(self):
-        self.player.update()
-
-class FieldWidgetManager:
-    def __init__(self, field_data: Obj.Field):
-        self.field_data = field_data
-        self.double_widget = CustomTuggleButton("ダブルバトル", method=self.update, width=12)
-        self.field_widget = CustomFrame(CustomCommboBox(D.FIELD, method=self.update, width=12), text="フィールド")
-        self.weather_widget = CustomFrame(CustomCommboBox(D.WEATHER, method=self.update, width=12), text="天候")
-        self.field_ability_widget_1 = CustomFrame(CustomCommboBox(D.ABIILITY, method=self.update, width=12), text="特性")
-        self.field_ability_widget_2 = CustomFrame(CustomCommboBox(D.ABIILITY, method=self.update, width=12), text="特性_2")
-        self.image_label = CustomFrame(CustomImageLabel())
-
-    def config(self):
-        self.field_data.config(
-            self.double_widget.variable,
-            self.field_widget.widget.variable,
-            self.weather_widget.widget.variable,
-            self.field_ability_widget_1.widget.variable,
-            self.field_ability_widget_2.widget.variable,
-        )
-
-    def update(self):
-        self.field_data.update()
-        self.image_label.widget.image_update(self.weather_widget.get(), self.field_widget.get())
-
-
 class BannerWidget:
     def __init__(self, parent, method: Callable, index_number: int):
         self.method = method
         self.index = index_number
         self.generator = Pr.ImageGenerator()
-        self.data: D.PokeData = None
+        self.data: Data.PokeData = None
         self.image = self.generator.create_banner()
         self.widget = tk.Label(parent, image=self.image)
         self.widget.bind("<Button-1>", lambda event: self.click())
@@ -789,10 +555,10 @@ class BannerWidget:
     def click(self):
         path = Pr.open_filedialogwindow("ポケモン選択", "Pokemon")
         if path:
-            self.data = D.PokeData(path)
+            self.data = Data.PokeData(path)
             self.load()
 
-    def load(self, data: D.PokeData=None):
+    def load(self, data: Data.PokeData=None):
         if data is not None:
             self.data = data
         self.image = self.generator.create_banner(self.data)
@@ -915,12 +681,16 @@ class Timer_widget(tk.Button):
     def __init__(self):
         self.playing = False
         self.timer_thread = None
-        self.variable = tk.StringVar(value="20:00")
+        self.image = Pr.ImageGenerator.create_time("20", "00")
 
     def create(self, parent, master: tk.Tk):
         self.master = master
-        tk.Button.__init__(self, parent, textvariable=self.variable, command=self.click, font=("Mairyo UI", 20, "bold"))
+        tk.Button.__init__(self, parent, image=self.image, command=self.click, font=("Mairyo UI", 20, "bold"))
         self.pack(padx=5)
+
+    def set(self, minit: str, second: str):
+        self.image = Pr.ImageGenerator.create_time(minit, second)
+        self.config(image=self.image)
 
     def click(self):
         self.playing = not self.playing
@@ -931,7 +701,7 @@ class Timer_widget(tk.Button):
             self.timer_thread.start()
         else:
             self.timer_thread = None
-            self.variable.set("20:00")
+            self.set("20", "00")
 
     def update(self):
         now = time.time()
@@ -947,10 +717,10 @@ class Timer_widget(tk.Button):
             minit = 20 - minit -1
         else:
             minit = 20 - minit -1
-        if minit == 0 and second == 0:
-            self.variable.set("00:00")
+        if minit < 0 and second < 0:
+            self.set("--", "--")
         else:
-            self.variable.set(f"{minit}:{second}")
+            self.set(minit, second)
 
     def battle_timer(self):
         if self.playing:
@@ -972,7 +742,6 @@ class ButtlePokeButton(tk.Button):
         self.image = Pr.ImageGenerator.create_battle_button(self.poke, self.mirror)
         self.config(image=self.image)
 
-
 class ChangePokeWidget:
     def __init__(self, side: str):
         if side == tk.LEFT:
@@ -987,19 +756,42 @@ class ChangePokeWidget:
     def update(self):
         [btn.update() for btn in self.buttons]
 
-class BattleManager:
-    def __init__(self, side: str, battle_type: int):
+
+class BattleHPWidget(tk.Label):
+    def __init__(self, width: float, text: str):
+        self.width = width
+        self.text = text
+        self.image = Pr.ImageGenerator.create_hp_image((int(400*self.width), 15), 1, 0, 0)
+
+    def create(self, parent):
+        frame = tk.LabelFrame(parent, text=self.text)
+        frame.pack()
+        tk.Label.__init__(self, frame, image=self.image)
+        self.pack()
+
+
+
+class BattleHPWidgets:
+    def __init__(self, side: str, width: float):
         self.side = side
-        self.battle_type = battle_type
-        self.party_widget = ChangePokeWidget(self.side)
+        self.width = width
+        self.max_result = BattleHPWidget(width, "特化")
+        self.min_result = BattleHPWidget(width, "無振")
+        self.calc_result = BattleHPWidget(width, "入力ステータス")
+        self.widgets = [self.max_result, self.min_result, self.calc_result]
+
+    def create(self, parent):
+        [widget.create(parent) for widget in self.widgets]
+
+class BattleWidget:
+    def __init__(self, poke: Obj.PokeDetail, side: str, width: float):
+        self.poke = poke
+        self.side = side
+        self.width = width
+        self.hp_widget = BattleHPWidgets(side, width)
+
+    def create(self, parent):
+        self.hp_widget.create(parent)
 
 
-class DoubleBattleManager:
-    def __init__(self):
-        self.left = BattleManager(tk.LEFT, 1)
-        self.right = BattleManager(tk.RIGHT, 2)
-        self.timer_widget = Timer_widget()
-
-    def team_update(self):
-        self.left.party_widget.update()
 

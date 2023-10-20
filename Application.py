@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog
 from typing import Callable
 
-import Object as Obj
+import Manager
 import Note
 
 NAME = "ポケモンSV ダメージ計算+αツール"
@@ -18,8 +18,8 @@ class Application(tk.Frame):
     def __init__(self, master: tk.Tk=None):
         super().__init__(master)
 
-        self.window_width = 1300
-        self.window_height = 700
+        self.window_width = 1400
+        self.window_height = 800
         master.geometry(f"{self.window_width}x{self.window_height}+100+100")
         master.title(f"{NAME}_{VERSION}")
         master.resizable(height=False, width=False)
@@ -37,27 +37,18 @@ class Application(tk.Frame):
         self.menu_widget = tk.Menu(master)
         master.config(menu=self.menu_widget)
 
-        self.manager = Manager(master)
+        self.manager = Manager.Manager(master)
 
         note = ttk.Notebook(self, width=self.window_width, height=self.window_height-40, style="example.TNotebook")
         note.pack()
 
-        self.page_1 = PokeRegisterNote(note, self.menu_widget)
+        self.page_1 = PokeRegisterNote(note, self.menu_widget, self.manager)
         self.page_2 = PartyRegisterNote(note, self.menu_widget, self.manager)
-        self.page_3 = DamageCalculatorNote(note, self.menu_widget)
-        self.page_4 = SingleDamageCalculatorNote(note, self.menu_widget, self.manager)
-        self.page_5 = DoubleDamageCalculatorNote(note, self.menu_widget, self.manager)
-        self.page_6 = StatusCalculatorNote(note, self.menu_widget)
-        self.page_7 = TestNote(note, self.menu_widget)
-
-class Manager:
-    def __init__(self, master: tk.Tk):
-        self.master = master
-        self.party = [Obj.PokeDetail() for i in range(6)]
-
-    def poke_generate(self, index: int, data):
-        self.party[index].re_init(data)
-
+        # self.page_3 = DamageCalculatorNote(note, self.menu_widget)
+        # self.page_4 = SingleDamageCalculatorNote(note, self.menu_widget, self.manager)
+        # self.page_5 = DoubleDamageCalculatorNote(note, self.menu_widget, self.manager)
+        # self.page_6 = StatusCalculatorNote(note, self.menu_widget)
+        # self.page_7 = TestNote(note, self.menu_widget)
 
 class ParentFrame:
     """
@@ -80,9 +71,9 @@ class PokeRegisterNote(ParentFrame):
     """
     ポケモン登録のためのタブ
     """
-    def __init__(self, note: ttk.Notebook, menu: tk.Menu):
+    def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager.Manager):
         super().__init__(note, menu)
-        self.widget_manager = Note.Page1(self.frame)
+        self.widget_manager = Note.Page1(self.frame, manager)
 
     def get_tab_name(self) -> str:
         return "ポケモン登録"

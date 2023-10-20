@@ -5,7 +5,7 @@ import math
 from typing import Union
 import tkinter as tk
 import random, string
-import Data as D
+import Data
 
 def random_id(n):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=n))
@@ -106,35 +106,17 @@ class Poke:
         self.terastal: str = ""
         self.level: int = 50
         self.move_list: "list[str]" = ["", "", "", ""]
+        self.dic: dict[str, tk.Variable | "list[tk.Variable]"] = {}
 
-    def config(
-            self,
-            name_variable: tk.StringVar,
-            item_variable: tk.StringVar,
-            terastal_variable: tk.StringVar,
-            ability_variable: tk.StringVar,
-            level_variable: tk.IntVar,
-            individual_variables: "list[tk.IntVar]",
-            effort_variables: "list[tk.IntVar]",
-            nature_variables: "list[tk.DoubleVar]",
-            move_variables: "list[tk.StringVar]"
-        ):
-        self.name_variable = name_variable
-        self.item_variable = item_variable
-        self.terastal_variable = terastal_variable
-        self.ability_variable = ability_variable
-        self.level_variable = level_variable
-        self.individual_variables = individual_variables
-        self.effort_variables = effort_variables
-        self.nature_variables = nature_variables
-        self.move_variables = move_variables
+    def set_dic(self, key, value):
+        self.dic[key] = value
 
     def generate(self, name: str=""):
         self.name = name
         if self.name:
-            data = D.POKEDATA.find(self.name, "name")
+            data = Data.POKEDATA.find(self.name, "name")
             [status.generate(data[5: 11][index]) for index, status in enumerate(self.status_list)]
-            self.ability_list = [d for d in data[11: 14] if d]
+            self.ability_list = [Data for Data in data[11: 14] if Data]
         else:
             [status.reset() for status in self.status_list]
         self.ability = ""
@@ -144,24 +126,30 @@ class Poke:
         self.move_list = ["", "", "", ""]
 
     def update(self):
-        self.level = self.level_variable.get()
-        if self.item_variable.get() in D.ITEMDATA.name_list:
-            self.item = self.item_variable.get()
-        self.ability = self.ability_variable.get()
-        self.terastal = self.terastal_variable.get()
-        self.move_list = [variable.get() for variable in self.move_variables]
+        self.level = self.dic["level"].get() if "level" in self.dic else 50
+        self.item = self.dic["item"].get() if "item" in self.dic else ""
+        self.ability = self.dic["ability"].get() if "ability" in self.dic else ""
+        self.terastal = self.dic["terastal"].get() if "terastal" in self.dic else ""
+        self.move_list = []
+        for i in range(4):
+            if  "move" in self.dic:
+                self.move_list.append(self.dic["move"][i].get())
+            else:
+                self.move_list.append("")
         for i in range(6):
             if i == 0:
                 self.status_list[i].status_update(
-                    self.effort_variables[i].get(),
-                    self.individual_variables[i].get(),
-                    self.level_variable.get())
+                    self.dic["effort"][i].get(),
+                    self.dic["individual"][i].get(),
+                    self.level
+                )
             else:
                 self.status_list[i].status_update(
-                    self.effort_variables[i].get(),
-                    self.individual_variables[i].get(),
-                    self.nature_variables[i-1].get(),
-                    self.level_variable.get())
+                    self.dic["effort"][i].get(),
+                    self.dic["individual"][i].get(),
+                    self.dic["nature"][i-1].get(),
+                    self.level
+                )
 
     def find_any_stats(self, stats_index: int, individual: int, effort: int, nature: float=1):
         copy_individual = self.status_list[stats_index].individual
@@ -191,46 +179,12 @@ class PokeDetail(Poke):
         self.hp_now: int = 1
         self.hp_result: int = 0
 
-    def config(
-            self,
-            name_variable: tk.StringVar,
-            item_variable: tk.StringVar,
-            terastal_variable: tk.StringVar,
-            ability_variable: tk.StringVar,
-            level_variable: tk.IntVar,
-            individual_variables: "list[tk.IntVar]",
-            effort_variables: "list[tk.IntVar]",
-            nature_variables: "list[tk.DoubleVar]",
-            move_variables: "list[tk.StringVar]",
-            rank_variables: "list[tk.IntVar]",
-            terastal_flag_variable: tk.BooleanVar,
-            move_flag_variable: tk.BooleanVar,
-            ability_flag_variable: tk.BooleanVar,
-            bad_stat_variable: tk.StringVar,
-        ):
-        super().config(
-            name_variable,
-            item_variable,
-            terastal_variable,
-            ability_variable,
-            level_variable,
-            individual_variables,
-            effort_variables,
-            nature_variables,
-            move_variables
-        )
-        self.rank_variables = rank_variables
-        self.terastal_flag_variable = terastal_flag_variable
-        self.move_flag_variable = move_flag_variable
-        self.ability_flag_bariable = ability_flag_variable
-        self.bad_stat_variable = bad_stat_variable
-
     def generate(self, name: str = ""):
         super().generate(name)
         self.hp_now = self.status_list[0].value
         self.hp_result = 0
 
-    def re_init(self, data: D.PokeData=None):
+    def re_init(self, data: Data.PokeData=None):
         """
         バナーセット時や手持ちのリセット時
         """
@@ -247,11 +201,16 @@ class PokeDetail(Poke):
 
     def update(self):
         super().update()
-        self.rank_list = [variable.get() for variable in self.rank_variables]
-        self.terastal_flag = self.terastal_flag_variable.get()
-        self.move_flag = self.move_flag_variable.get()
-        self.bad_stat = self.bad_stat_variable.get()
-        self.ability_flag = self.ability_flag_bariable.get()
+        self.rank_list = []
+        for i in range(5):
+            if "rank" in self.dic:
+                self.rank_list.append(self.dic["rank"][i].get())
+            else:
+                self.rank_list.append("")
+        self.terastal_flag = self.dic["terastal_flag"].get() if "terastal_flag" in self.dic else False
+        self.move_flag = self.dic["move_flag"].get() if "move_flag" in self.dic else False
+        self.bad_stat = self.dic["bad_stat"].get() if "bad_stat" in self.dic else ""
+        self.ability_flag = self.dic["ability_flag"].get() if "ability_flag" in self.dic else False
 
     def copy(self):
         dic ={

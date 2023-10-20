@@ -6,39 +6,65 @@ import tkinter as tk
 from tkinter import messagebox
 import copy
 
-import Application
+import Manager
 import Widget as Wid
-import Data as D
+import Data
 import Process as Pr
 import Object as Obj
 import Calculation as Calc
 
-class Page1(Wid.StatusWidgetManager):
-    def __init__(self, parent):
-        super().__init__(Obj.Poke())
-        self.config()
+class Page1:
+    def __init__(self, parent, manager: Manager.Manager):
+        self.manager = manager
+        self.widget = Manager.StatusWidgetManager(Obj.Poke())
+        self.widget.set_dic()
+        self.widget.add_update_method(self.update)
         top_frame = tk.Frame(parent)
         top_frame.pack(pady=5)
-        self.name_widget.create(top_frame)
-        self.name_widget.pack_widget(tk.LEFT, padx=5)
-        self.level_widget.create(top_frame)
-        self.level_widget.pack_widget(tk.LEFT, padx=5)
-        self.ability_widget.create(top_frame)
-        self.ability_widget.pack_widget(tk.LEFT, padx=5)
-        self.item_widget.create(top_frame)
-        self.item_widget.pack_widget(tk.LEFT, padx=5)
+        name_frame = tk.LabelFrame(top_frame, text="ポケモン名")
+        name_frame.pack(side=tk.LEFT, padx=5)
+        self.widget.name_widget.create(name_frame)
+        # self.widget.name_widget.method = self.name_widget_func
+        self.widget.name_widget.pack(padx=5, pady=5)
+
+        level_frame = tk.LabelFrame(top_frame, text="Lv")
+        level_frame.pack(side=tk.LEFT, padx=5)
+        self.widget.level_widget.create(level_frame)
+        # self.widget.level_widget.method = self.update
+        self.widget.level_widget.pack(padx=5, pady=5)
+
+        terastal_frame = tk.LabelFrame(top_frame, text="テラスタル")
+        terastal_frame.pack(side=tk.LEFT, padx=5)
+        self.widget.terastal_widget.create(terastal_frame)
+        self.widget.terastal_widget.config(width=10)
+        # self.widget.terastal_widget.method = self.update
+        self.widget.terastal_widget.pack(padx=5, pady=5)
+
+        ability_frame = tk.LabelFrame(top_frame, text="とくせい")
+        ability_frame.pack(side=tk.LEFT, padx=5)
+        self.widget.ability_widget.create(ability_frame)
+        self.widget.ability_widget.pack(padx=5, pady=5)
+
+        item_frame = tk.LabelFrame(top_frame, text="もちもの")
+        item_frame.pack(side=tk.LEFT, padx=5)
+        self.widget.item_widget.create(item_frame)
+        # self.widget.item_widget.method = self.update
+        self.widget.item_widget.pack(padx=5, pady=5)
 
         move_frame = tk.Frame(parent)
         move_frame.pack(pady=5)
-        [widget.create(move_frame) for widget in self.move_widgets]
-        [widget.pack_widget(tk.LEFT, padx=5) for widget in self.move_widgets]
+        for i in range(4):
+            frame = tk.LabelFrame(move_frame, text=f"わざ_{i+1}")
+            frame.pack(side=tk.LEFT, padx=5)
+            self.widget.move_widgets[i].create(frame)
+            self.widget.move_widgets[i].pack(padx=5, pady=5)
 
         middle_frame = tk.Frame(parent)
         middle_frame.pack(pady=10)
         status_frame = tk.Frame(middle_frame)
         status_frame.pack(side=tk.LEFT)
-        [widget.create(status_frame) for widget in self.status_widgets]
-        [widget.status_label.config(font=("Helvetica", 20, "bold")) for widget in self.status_widgets]
+        [widget.create(status_frame) for widget in self.widget.status_widgets]
+        [widget.status_label.config(font=("Helvetica", 20, "bold")) for widget in self.widget.status_widgets]
 
         labels = [tk.Label(status_frame, text=label) for label in ["", "実数値", "個体値", "努力値", "性格"]]
         self.effrot_label = tk.Label(status_frame, text=510, font=("Helvetica", 12, "bold"))
@@ -47,39 +73,45 @@ class Page1(Wid.StatusWidgetManager):
 
         labels = [tk.Label(status_frame, text=label) for label in ["HP", "攻撃", "防御", "特攻", "特防", "素早"]]
         [label.grid(row=index+1, column=0) for index, label in enumerate(labels)]
-        [widget.grid("x", 1, index+1, 5) for index, widget in enumerate(self.status_widgets)]
+        for index, widget in enumerate(self.widget.status_widgets):
+            widget.status_label.grid(row=index+1, column=1, padx=5)
+            widget.individual.grid(row=index+1, column=2, padx=5)
+            widget.effort.slider.grid(row=index+1, column=3, padx=5)
+            widget.effort.grid(row=index+1, column=4, padx=5)
+            if index:
+                widget.nature.grid(row=index+1, column=5, padx=5)
 
-        img_frame = tk.Frame(middle_frame)
-        img_frame.pack(side=tk.LEFT, padx=10)
-        self.img_label = tk.Label(img_frame)
-        self.generate_image()
-        self.img_label.pack(side=tk.BOTTOM)
-        self.terastal_widget.create(img_frame)
-        self.terastal_widget.pack_widget(tk.BOTTOM, pady=10)
+        if self.manager.image_flag:
+            img_frame = tk.Frame(middle_frame)
+            img_frame.pack(side=tk.LEFT, padx=10)
+            self.img_label = tk.Label(img_frame)
+            self.generate_image()
+            self.img_label.pack(side=tk.BOTTOM)
 
         bottom_frame = tk.Frame(parent)
         bottom_frame.pack()
-        self.memo_widget = Wid.CustomFrame(Wid.CustomTextBox(width=50, height=5, font=("Meiryo UI", 20, "bold")), text="メモ欄")
-        self.memo_widget.create(bottom_frame)
-        self.memo_widget.pack_widget()
+        memo_frame = tk.LabelFrame(bottom_frame, text="メモ欄")
+        memo_frame.pack()
+        self.memo_widget = Wid.CustomTextBox(width=50, height=5, font=("Meiryo UI", 20, "bold"))
+        self.memo_widget.create(memo_frame)
+        self.memo_widget.pack()
 
     def generate_image(self):
-        self.img = Pr.ImageGenerator.create_page1(self.poke.name, self.poke.item, self.poke.terastal)
+        self.img = Pr.ImageGenerator.create_page1(self.widget.poke.name, self.widget.poke.item, self.widget.poke.terastal)
         self.img_label.config(image=self.img)
 
     def name_widget_func(self):
-        super().name_widget_func()
+        self.widget.name_widget_func()
         self.generate_image()
-        self.memo_widget.widget.delete()
+        self.memo_widget.delete()
         self.update()
 
     def update(self):
-        super().update()
         self.sum_effort()
         self.generate_image()
 
     def sum_effort(self):
-        result = 510 - sum(status.effort for status in self.poke.status_list)
+        result = 510 - sum(status.effort for status in self.widget.poke.status_list)
         self.effrot_label.config(text=result)
         if result < 0:
             self.effrot_label.config(foreground="red")
@@ -88,7 +120,7 @@ class Page1(Wid.StatusWidgetManager):
 
     def save_poke(self):
         if self.save_check():
-            path = D.save_filedialogwindow(f"{self.poke.name}@{self.poke.item}", "ポケモン保存", "Pokemon", ("text_file", "txt"))
+            path = Data.save_filedialogwindow(f"{self.poke.name}@{self.poke.item}", "ポケモン保存", "Pokemon", ("text_file", "txt"))
             if path:
                 save_data = [self.poke.name, self.poke.level, self.poke.item, self.poke.ability, self.poke.terastal]
                 save_data.append("/".join([move for move in self.poke.move_list]))
@@ -117,9 +149,9 @@ class Page1(Wid.StatusWidgetManager):
         return True
 
     def load_poke(self):
-        path = D.open_filedialogwindow("ポケモン読み込み", "Pokemon", ("text_file", "txt"))
+        path = Data.open_filedialogwindow("ポケモン読み込み", "Pokemon", ("text_file", "txt"))
         if path:
-            data = D.PokeData(path)
+            data = Data.PokeData(path)
             self.poke.generate(data.name)
             self.name_widget.set(data.name)
             self.level_widget.set(data.level)
@@ -138,7 +170,7 @@ class Page1(Wid.StatusWidgetManager):
             [self.memo_widget.widget.set(f"{m}\n") for m in data.memo]
 
 class Page2:
-    def __init__(self, parent, manager: Application.Manager):
+    def __init__(self, parent, manager: Manager.Manager):
         frame = tk.Frame(parent)
         frame.pack(pady=5)
         self.manager = manager
@@ -170,17 +202,17 @@ class Page2:
             self.text_variable.set(self.default_text)
 
     def save_party(self):
-        path = D.save_filedialogwindow("", "パーティ登録", "Party", ("party_data", ".party"))
+        path = Data.save_filedialogwindow("", "パーティ登録", "Party", ("party_data", ".party"))
         if path:
             write_data = [widget.data.save() if widget.data is not None else [] for widget in self.widgets]
-            D.save_file(path, write_data)
+            Data.save_file(path, write_data)
 
     def load_party(self):
-        path = D.open_filedialogwindow("パーティ読み込み", "Party", ("party_data", ".party"))
+        path = Data.open_filedialogwindow("パーティ読み込み", "Party", ("party_data", ".party"))
         if path:
-            data_list = D.open_file(path)
+            data_list = Data.open_file(path)
             for index, widget in enumerate(self.widgets):
-                data = D.PokeData(data_list[index])
+                data = Data.PokeData(data_list[index])
                 widget.load(data)
 
 class Page3:
@@ -191,14 +223,14 @@ class Page3:
 
         left_frame = tk.Frame(frame)
         left_frame.pack(side=tk.LEFT, anchor=tk.W)
-        self.left = Wid.StatusWidgetManagerPlus(Obj.PokeDetail())
-        self.left_field = Wid.PlayerFieldManager(Obj.PlayerField())
+        self.left = Manager.StatusWidgetManagerPlus(Obj.PokeDetail())
+        self.left_field = Manager.PlayerFieldManager(Obj.PlayerField())
         self.create(left_frame, self.left, self.left_field, tk.LEFT)
 
         right_frame = tk.Frame(frame)
         right_frame.pack(side=tk.RIGHT, anchor=tk.E)
-        self.right = Wid.StatusWidgetManagerPlus(Obj.PokeDetail())
-        self.right_field = Wid.PlayerFieldManager(Obj.PlayerField())
+        self.right = Manager.StatusWidgetManagerPlus(Obj.PokeDetail())
+        self.right_field = Manager.PlayerFieldManager(Obj.PlayerField())
         self.create(right_frame, self.right, self.right_field, tk.RIGHT)
 
         self.manager = {
@@ -206,7 +238,7 @@ class Page3:
             tk.RIGHT: self.right
         }
 
-        self.field_manager = Wid.FieldWidgetManager(Obj.Field())
+        self.field_manager = Manager.FieldWidgetManager(Obj.Field())
         center_frame = tk.LabelFrame(frame, text="状況")
         center_frame.pack(side=tk.BOTTOM, anchor=tk.S)
         self.field_manager.image_label.create(center_frame, False)
@@ -230,7 +262,7 @@ class Page3:
         self.right.result_widget.create(result_frame)
         self.right.result_widget.pack(side=tk.LEFT, padx=2)
 
-    def create(self, frame, manager: Wid.StatusWidgetManagerPlus, field: Wid.PlayerFieldManager, side):
+    def create(self, frame, manager: Manager.StatusWidgetManagerPlus, field: Manager.PlayerFieldManager, side):
         out_frame = tk.Frame(frame)
         out_frame.pack(side=side, padx=5)
         manager.button_widget.create(out_frame, side, self.change)
@@ -393,7 +425,7 @@ class Page4:
     """
     シングルバトル
     """
-    def __init__(self, parent, manager: Application.Manager):
+    def __init__(self, parent, manager: Manager.Manager):
         self.manager = manager
         left_frame = tk.Frame(parent)
         left_frame.pack(side=tk.LEFT)
@@ -405,9 +437,9 @@ class Page5:
     """
     ダブルバトル
     """
-    def __init__(self, parent, manager: Application.Manager):
+    def __init__(self, parent, manager: Manager.Manager):
         self.manager = manager
-        self.battle_manager = Wid.DoubleBattleManager()
+        self.battle_manager = Manager.DoubleBattleManager()
         left_frame = tk.Frame(parent)
         left_frame.pack(side=tk.LEFT)
         self.battle_manager.left.party_widget.create(left_frame, self.manager.party)
@@ -420,6 +452,15 @@ class Page5:
         top_frame.pack()
         self.battle_manager.timer_widget.create(top_frame, self.manager.master)
 
+        middle_frame = tk.Frame(parent)
+        middle_frame.pack()
+        middle_left_frames = [tk.LabelFrame(middle_frame, relief=tk.SOLID, bd=2, text=i) for i in range(2)]
+        [frame.pack(side=tk.LEFT, fill="both", expand=True, padx=5) for frame in middle_left_frames]
+        self.battle_manager.left.create(middle_left_frames)
+
+        middle_right_frames = [tk.LabelFrame(middle_frame, relief=tk.SOLID, bd=2, text=i) for i in range(2)]
+        [frame.pack(side=tk.RIGHT, fill="both", expand=True, padx=5) for frame in middle_right_frames]
+        self.battle_manager.right.create(middle_right_frames)
 
 
 class Page6:

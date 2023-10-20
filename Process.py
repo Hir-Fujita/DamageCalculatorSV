@@ -5,8 +5,17 @@ import pickle
 from tkinter import filedialog
 import re
 from PIL import Image, ImageTk, ImageDraw, ImageOps, ImageFont, ImageFilter
-import Data as D
+import Data
 import Object as Obj
+
+GREEN = (0, 196, 0)
+GREEN_2 = (164, 255, 164)
+YELLOW = (229, 176, 0)
+YELLOW_2 = (255, 255, 148)
+RED = (255, 0, 0)
+RED_2 = (226, 139, 139)
+BLACK = (0, 0, 0)
+WHITE = (0, 0, 0, 0)
 
 def open_file(path):
     with open(path, "rb") as f:
@@ -18,7 +27,7 @@ def save_file(path, data):
         pickle.dump(data, f)
 
 def save_filedialogwindow(save_name: str, title: str, parent_folder: str="") -> str:
-    save_folder = f"./{D.FOLDER}/Data/{parent_folder}"
+    save_folder = f"./{Data.FOLDER}/Data/{parent_folder}"
     filepath = filedialog.asksaveasfilename(
         title=title,
         initialfile=save_name,
@@ -29,7 +38,7 @@ def save_filedialogwindow(save_name: str, title: str, parent_folder: str="") -> 
     return filepath
 
 def open_filedialogwindow(title: str, parent_folder: str="") -> str:
-    load_folder = f"./{D.FOLDER}/Data/{parent_folder}"
+    load_folder = f"./{Data.FOLDER}/Data/{parent_folder}"
     filepath = filedialog.askopenfilename(
         title=title,
         multiple=False,
@@ -40,10 +49,10 @@ def open_filedialogwindow(title: str, parent_folder: str="") -> str:
 
 def metronome(name: str, mirror: bool) -> Image.Image:
         name = name.replace("メトロノーム", "")
-        image: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/item/メトロノーム")
+        image: Image.Image = open_file(f"{Data.FOLDER}/Data/Image_data/item/メトロノーム")
         text_image = Image.new("RGBA", (image.size[0], image.size[1]), (0, 0, 0, 0))
         draw = ImageDraw.Draw(text_image)
-        font = ImageFont.truetype(f"{D.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 40)
+        font = ImageFont.truetype(f"{Data.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 40)
         draw.text((0, 0), name, fill="white", stroke_width=2, stroke_fill="black", font=font)
         text_image = text_image.crop(text_image.split()[-1].getbbox())
         if mirror:
@@ -56,13 +65,13 @@ def metronome(name: str, mirror: bool) -> Image.Image:
 class ImageGenerator:
     def img_open(self, name: str, category: str, size: "tuple[int]"=None):
         if category == "poke":
-            name = D.POKEDATA.find(name, "name", "number")
+            name = Data.POKEDATA.find(name, "name", "number")
             parent = "pokemon"
         elif category == "item":
             parent = "item"
         elif category == "terastal":
             parent = "type"
-        image: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/{parent}/{name}")
+        image: Image.Image = open_file(f"{Data.FOLDER}/Data/Image_data/{parent}/{name}")
         if size is not None:
             if image.size[0] > size[0] or image.size[1] > size[1]:
                 image = image.resize((image.size[0]*2, image.size[1]*2))
@@ -77,7 +86,7 @@ class ImageGenerator:
     def create_text(self, text: str, width=2) -> Image.Image:
         text_image = Image.new("RGBA", (400, 400), (0, 0, 0, 0))
         draw = ImageDraw.Draw(text_image)
-        font = ImageFont.truetype(f"{D.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 40)
+        font = ImageFont.truetype(f"{Data.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 40)
         draw.text((0, 0), text, fill="white", stroke_width=width, stroke_fill="black", font=font)
         text_image = text_image.crop(text_image.split()[-1].getbbox())
         return text_image
@@ -87,13 +96,13 @@ class ImageGenerator:
         size = (200, 200)
         image = Image.new("RGBA", size, (0, 0, 0, 0))
         if name:
-            number = D.POKEDATA.find(name, "name", "number")
+            number = Data.POKEDATA.find(name, "name", "number")
         else:
             number = "0"
         if terastal:
             terastal_image = cls.img_open(cls, terastal, "terastal", (100, 100))
             image.paste(terastal_image, (0, 0), terastal_image)
-        poke_image: Image.Image = open_file(f"{D.FOLDER}/Data/Image_data/pokemon/{number}")
+        poke_image: Image.Image = open_file(f"{Data.FOLDER}/Data/Image_data/pokemon/{number}")
         poke_image = cls.img_open(cls, name, "poke")
         image.paste(poke_image, (size[0]//2 - poke_image.size[0]//2, size[1]-poke_image.size[1]), mask=poke_image)
         if item:
@@ -108,7 +117,7 @@ class ImageGenerator:
         return ImageTk.PhotoImage(image)
 
     @classmethod
-    def create_banner(cls, data: D.PokeData=None):
+    def create_banner(cls, data: Data.PokeData=None):
         size = (400, 200)
         image = Image.new("RGBA", size=size, color=(0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
@@ -117,7 +126,7 @@ class ImageGenerator:
                 [(0, 0), (size[0]-1, size[1]-1)],
                 radius=10, fill="gray", outline="black", width=3)
         else:
-            color = D.TYPEDATA.typecolor(data.terastal)
+            color = Data.TYPEDATA.typecolor(data.terastal)
             draw.rounded_rectangle(
                 [(0, 0), (size[0]-1, size[1]-1)],
                 radius=10, fill=color, outline="black", width=3)
@@ -136,9 +145,9 @@ class ImageGenerator:
                     text.thumbnail((200, item_image.size[1]/3))
                     item_image.paste(text, (item_image.size[0]-text.size[0], item_image.size[1]-text.size[1]), mask=text)
                 image.paste(item_image, (4, size[1]-item_image.size[1]-4), mask=item_image)
-            font = ImageFont.truetype(f"{D.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 26)
+            font = ImageFont.truetype(f"{Data.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 26)
             draw.text((10, 4), f"{data.name}:Lv{data.level}",fill="white", stroke_width=2, stroke_fill="black", font=font)
-            font = ImageFont.truetype(f"{D.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 20)
+            font = ImageFont.truetype(f"{Data.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 20)
             draw.text((10, 35), f"{data.item}",fill="white", stroke_width=2, stroke_fill="black", font=font)
             draw.text((10, 60), f"{data.ability}",fill="white", stroke_width=2, stroke_fill="black", font=font)
             draw.text((160, 95), f"{data.move_list[0]}",fill="white", stroke_width=2, stroke_fill="black", font=font)
@@ -193,13 +202,6 @@ class ImageGenerator:
     @classmethod
     def create_hp_image(self, size: "tuple[int]", hp: int, max: int, min: int, width: int=2, tk: bool=True):
         def hp_color(ratio: int):
-            GREEN = (0, 196, 0)
-            GREEN_2 = (164, 255, 164)
-            YELLOW = (229, 176, 0)
-            YELLOW_2 = (255, 255, 148)
-            RED = (255, 0, 0)
-            RED_2 = (226, 139, 139)
-            BLACK = (0, 0, 0)
             if ratio > 50:
                 return GREEN, GREEN_2
             elif ratio <= 20:
@@ -243,12 +245,25 @@ class ImageGenerator:
         if field:
             color = dic[field]
             paste = Image.new("RGB", size, color)
-            field_img = open_file(f"{D.FOLDER}/Data/Image_data/misc/field")
+            field_img = open_file(f"{Data.FOLDER}/Data/Image_data/misc/field")
             image.paste(paste, mask=field_img)
         if weather:
-            weather_img = open_file(f"{D.FOLDER}/Data/Image_data/misc/{weather}")
+            weather_img = open_file(f"{Data.FOLDER}/Data/Image_data/misc/{weather}")
             image.paste(weather_img, mask=weather_img)
         return ImageTk.PhotoImage(image)
+
+    @classmethod
+    def create_time(cls, minit: str, second: str):
+        image = Image.new("RGBA", (200, 50), (0, 0 ,0, 0))
+        draw = ImageDraw.Draw(image)
+        font = ImageFont.truetype(f"{Data.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 50)
+        if int(minit) < 5:
+            color = "red"
+        else:
+            color = "white"
+        draw.text((image.size[0]/2, image.size[1]/2-2), f"{minit}:{second}", fill=color, stroke_width=4, stroke_fill="black", font=font, anchor='mm')
+        return ImageTk.PhotoImage(image)
+
 
     @classmethod
     def create_button(cls, name="", lock: bool=False, mirror: bool=False):
@@ -264,8 +279,8 @@ class ImageGenerator:
             image = ImageOps.mirror(image)
         if lock:
             draw = ImageDraw.Draw(image)
-            font = ImageFont.truetype(f"{D.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 20)
-            draw.text((62, 29), "LOCK",fill="white", stroke_width=2, stroke_fill="black", font=font)
+            font = ImageFont.truetype(f"{Data.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 20)
+            draw.text((62, 29), "LOCK", fill="white", stroke_width=2, stroke_fill="black", font=font)
         return ImageTk.PhotoImage(image)
 
     @classmethod

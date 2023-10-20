@@ -5,9 +5,10 @@ from typing import Union
 import pickle
 import csv
 import configparser
+import os
 from tkinter import filedialog
 
-FOLDER = "DamageCalculatorSV"
+FOLDER = f"{os.getcwd()}\DamageCalculatorSV"
 
 def open_file(path):
     with open(path, "rb") as f:
