@@ -343,6 +343,7 @@ class CustomHPNowBox(CustomSpinBox):
         self.bind("<KeyRelease>", lambda event: self.key_input())
         self.label = tk.Label(parent, text="/")
         self.max_label = tk.Label(parent, textvariable=self.max_variable, width=3)
+        self.slider = None
         if font is not None:
             self.config(font=font)
             self.label.config(font=font)
@@ -356,7 +357,8 @@ class CustomHPNowBox(CustomSpinBox):
         self.max_variable.set(value)
         self.config(to=value)
         self.now_variable.set(value)
-        self.slider.config(to=value)
+        if self.slider is not None:
+            self.slider.config(to=value)
 
     def set(self, now: int, max: int=None):
         if max is not None:
@@ -768,17 +770,18 @@ class ButtlePokeButton(tk.Button):
         self.config(image=self.image)
 
     def func(self):
-        print(self.poke.name, self.index)
+        print(self.poke.name, self.poke.id, self.index)
 
 class ChangePokeWidget:
-    def __init__(self, side: str):
+    def __init__(self, side: str, poke_list: list[Obj.PokeDetail]):
+        self.poke_list = poke_list
         if side == tk.LEFT:
             self.buttons = [ButtlePokeButton(i, True) for i in range(6)]
         else:
             self.buttons = [ButtlePokeButton(i, False) for i in range(6)]
 
-    def create(self, parent, poke_list: "list[Obj.PokeDetail]"):
-        [btn.create(parent, poke_list[index]) for index, btn in enumerate(self.buttons)]
+    def create(self, parent):
+        [btn.create(parent, self.poke_list[index]) for index, btn in enumerate(self.buttons)]
         [btn.pack(pady=2) for btn in self.buttons]
 
     def update(self):
@@ -806,7 +809,6 @@ class BattleHPWidgets:
         self.max_result = BattleHPWidget(width, "特化")
         self.min_result = BattleHPWidget(width, "無振")
         self.calc_result = BattleHPWidget(width, "入力")
-        self.now_widget = CustomHPNowBox()
 
 
     def create(self, parent):
@@ -816,12 +818,9 @@ class BattleHPWidgets:
         self.min_result.pack()
         self.calc_result.create(parent)
         self.calc_result.pack()
-        self.now_widget.create_slider(parent)
-        self.now_widget.slider.pack()
 
 class BattleWidget:
     def __init__(self, side: str, battle_type: int):
-        self.poke = Obj.PokeDetail()
         self.side = side
         self.battle_type = battle_type
         self.width = 1 / battle_type
@@ -844,10 +843,12 @@ class BattleWidget:
         self.widget.terastal_widget.t_button.pack(side=tk.LEFT, padx=5)
         hp_now_frame = tk.LabelFrame(middle_2_frame, text="現在HP")
         hp_now_frame.grid(row=0, column=1)
-        self.hp_widget.now_widget.create(hp_now_frame)
-        self.hp_widget.now_widget.pack(side=tk.LEFT)
-        self.hp_widget.now_widget.label.pack(side=tk.LEFT)
-        self.hp_widget.now_widget.max_label.pack(side=tk.LEFT)
+        self.widget.hp_now_widget.create(hp_now_frame)
+        self.widget.hp_now_widget.create_slider(top_frame)
+        self.widget.hp_now_widget.slider.pack()
+        self.widget.hp_now_widget.pack(side=tk.LEFT)
+        self.widget.hp_now_widget.label.pack(side=tk.LEFT)
+        self.widget.hp_now_widget.max_label.pack(side=tk.LEFT)
         ability_frame = tk.LabelFrame(middle_2_frame, text="とくせい")
         ability_frame.grid(row=1, column=0)
         self.widget.ability_widget.create(ability_frame)
@@ -903,15 +904,26 @@ class BattleWidget:
             wid.button.grid(row=index, column=2)
         self.widget.set_dic()
 
+    def poke_select(self, poke: Obj.PokeDetail):
+        data = poke.copy()
+        self.widget.poke.paste(data)
+        self.widget.widget_update()
+
 
 class BannerWidgetPage3(tk.Button):
-    def __init__(self, side: str):
+    def __init__(self, side: str, menu: tk.Menu):
+        self.menu = menu
         self.mirror = False if side == tk.LEFT else True
         self.image = Pr.ImageGenerator.create_battle_banner(Obj.PokeDetail(), self.mirror)
 
     def create(self, parent):
         tk.Button.__init__(self, parent, image=self.image)
+        self.bind("<Button-3>", lambda event: self.show_menu(event))
 
     def update(self, poke: Obj.PokeDetail):
         self.image = Pr.ImageGenerator.create_battle_banner(poke, self.mirror)
         self.config(image=self.image)
+
+    def show_menu(self, event):
+        self.menu.post(event.x_root, event.y_root)
+

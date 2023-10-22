@@ -121,7 +121,7 @@ class Page1:
             path = Data.save_filedialogwindow(f"{poke.name}@{poke.item}", "ポケモン保存", "Pokemon", ("text_file", "txt"))
             if path:
                 save_data = [poke.name, poke.level, poke.item, poke.ability, poke.terastal]
-                save_data.append("/".join([move for move in self.poke.move_list]))
+                save_data.append("/".join([move for move in poke.move_list]))
                 for index, status in enumerate(poke.status_list):
                     if index == 0:
                         save_data.append(f"{str(status.individual)}/{str(status.effort)}")
@@ -163,9 +163,10 @@ class Page1:
                 if index != 0:
                     widget.nature.set(data.status[index][2])
                     widget.status_label.color_change(data.status[index][2])
+            self.memo_widget.delete()
+            [self.memo_widget.set(f"{m}\n") for m in data.memo]
+            self.widget.update()
             self.update()
-            self.memo_widget.widget.delete()
-            [self.memo_widget.widget.set(f"{m}\n") for m in data.memo]
 
 class Page2:
     def __init__(self, parent, manager: Manager.Manager):
@@ -467,14 +468,14 @@ class Page5:
     """
     def __init__(self, parent, manager: Manager.Manager):
         self.manager = manager
-        self.battle_manager = Manager.DoubleBattleManager()
+        self.battle_manager = Manager.DoubleBattleManager(manager)
         left_frame = tk.Frame(parent)
         left_frame.pack(side=tk.LEFT)
-        self.battle_manager.left.party_widget.create(left_frame, self.manager.party)
+        self.battle_manager.left.party_widget.create(left_frame)
 
         right_frame = tk.Frame(parent)
         right_frame.pack(side=tk.RIGHT)
-        self.battle_manager.right.party_widget.create(right_frame, self.manager.enemy)
+        self.battle_manager.right.party_widget.create(right_frame)
 
         top_frame = tk.Frame(parent)
         top_frame.pack()

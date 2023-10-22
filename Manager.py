@@ -11,12 +11,10 @@ import Data
 class Manager:
     def __init__(self, master):
         self.master = master
-        self.image_flag = False
+        self.image_flag = True
         self.party = [Obj.PokeDetail() for i in range(6)]
         self.enemy = [Obj.PokeDetail() for i in range(6)]
 
-    def poke_generate(self, index: int, data):
-        self.party[index].re_init(data)
 
 class StatusWidgetManager:
     def __init__(self):
@@ -76,10 +74,12 @@ class StatusWidgetManager:
     def add_update_method(self, method: Callable):
         self.method = method
 
+
 class StatusWidgetManagerPage3(StatusWidgetManager):
     def __init__(self):
         super().__init__()
         self.poke = Obj.PokeDetail()
+        self.status_widgets = [Wid.StatusWidget(status, self.children_method) for status in self.poke.status_list]
         self.ability_widget = Wid.CustomCommboButtonBox(method=self.update)
         self.terastal_widget = Wid.CustomCommboButtonBox(Data.TYPEDATA.list, method=self.update)
         self.move_widgets = [Wid.CustomCommboButtonBox(Data.MOVEDATA, method=self.update) for i in range(4)]
@@ -170,8 +170,33 @@ class StatusWidgetManagerBattle(StatusWidgetManagerPage3):
         del self.button_widget
         self.move_counter_widgets = [Wid.CustomCountBox() for i in range(4)]
 
-    def image_update(self):
-        pass
+    def update(self):
+        self.poke.update()
+        [widget.set_label() for widget in self.status_widgets]
+        self.hp_now_widget.set(self.poke.hp_now, self.poke.status_list[0].value)
+
+    def widget_update(self):
+        self.item_widget.set(self.poke.item)
+        self.terastal_widget.set(self.poke.terastal)
+        self.ability_widget.set(self.poke.ability)
+        self.ability_widget.config(values=self.poke.ability_list)
+        self.level_widget.set(self.poke.level)
+        for index, status in enumerate(self.status_widgets):
+            status.individual.set(self.poke.status_list[index].individual)
+            status.effort.set(self.poke.status_list[index].effort)
+            if index != 0:
+                status.nature.variable.set(self.poke.status_list[index].nature)
+        for index, widget in enumerate(self.move_widgets):
+            widget.set(self.poke.move_list[index])
+        for index, widget in enumerate(self.rank_widgets):
+            widget.set(self.poke.rank_list[index])
+        self.ability_widget.t_button.set(self.poke.ability_flag)
+        self.terastal_widget.t_button.set(self.poke.terastal_flag)
+        self.move_flag_widget.set(self.poke.move_flag)
+        self.bad_stat_widget.set(self.poke.bad_stat)
+        self.update()
+
+
 
 
 class PlayerFieldManager:
@@ -224,14 +249,30 @@ class FieldWidgetManager:
         self.field_data.update()
         self.image_label.image_update(self.weather_widget.get(), self.field_widget.get())
 
+
 class BattleManager:
-    def __init__(self, side: str, battle_type: int):
+    def __init__(self, side: str, battle_type: int, poke_list: list[Obj.PokeDetail]):
+        self.poke_list = poke_list
         self.side = side
         self.battle_type = battle_type
-        self.banners = [Wid.BannerWidgetPage3(side) for i in range(battle_type)]
-        self.party_widget = Wid.ChangePokeWidget(self.side)
+        self.menus = [tk.Menu(None, tearoff=0) for i in range(battle_type)]
+        self.create_menu()
+        self.banners = [Wid.BannerWidgetPage3(side, self.menus[i]) for i in range(battle_type)]
+        self.party_widget = Wid.ChangePokeWidget(self.side, self.poke_list)
         self.battle_widgets = [Wid.BattleWidget(side, battle_type) for i in range(battle_type)]
         self.player_widget = PlayerFieldManager()
+
+    def create_menu(self):
+        for widget_index, menu in enumerate(self.menus):
+            menu.delete(0, "end")
+            for poke_index, poke in enumerate(self.poke_list):
+                if poke.name:
+                    menu.add_command(label=poke.name, command=lambda w=widget_index, p=poke_index: self.poke_select(w, p))
+
+    def poke_select(self, widget_index: int, party_index: int):
+        [print(poke.name) for poke in self.poke_list]
+        self.battle_widgets[widget_index].poke_select(self.poke_list[party_index])
+        self.banners[widget_index].update(self.poke_list[party_index])
 
     def create(self, parent: "list[tk.Tk]"):
         for index in range(self.battle_type):
@@ -254,14 +295,14 @@ class BattleManager:
         self.player_widget.crit_widget.grid(row=1, column=col, padx=2, pady=2)
 
 
-
-
 class DoubleBattleManager:
-    def __init__(self):
-        self.left = BattleManager(tk.LEFT, 2)
-        self.right = BattleManager(tk.RIGHT, 2)
+    def __init__(self, manager: Manager):
+        self.manager = manager
+        self.left = BattleManager(tk.LEFT, 2, self.manager.party)
+        self.right = BattleManager(tk.RIGHT, 2, self.manager.enemy)
         self.field = FieldWidgetManager()
         self.timer_widget = Wid.Timer_widget()
 
     def team_update(self):
         self.left.party_widget.update()
+        self.left.create_menu()

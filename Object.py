@@ -69,35 +69,32 @@ class Status(StatusHP):
     def print(self):
         print(f"value:{self.value}\tbase:{self.basestatus}\tindividual{self.individual}\teffort{self.effort}\tnature:{self.nature}")
 
-class StatusHPDetail(StatusHP):
-    def __init__(self):
-        super().__init__()
-        self.value_now = 1
+# class StatusHPDetail(StatusHP):
+#     def __init__(self):
+#         super().__init__()
+#         self.value_now = 1
 
-    def generate(self, basestatus: int):
-        self.basestatus = int(basestatus)
-        self._status_calculation(50)
-        self.value_now = self.value
+#     def generate(self, basestatus: int):
+#         super().generate(basestatus)
+#         self.value_now = self.value
 
-    def _status_calculation(self, level: int=50) -> int:
-        base = self.basestatus * 2 + self.individual
-        effort = math.floor(self.effort / 4)
-        if self.basestatus:
-            self.value = math.floor(math.floor((base + effort) * level / 100) + level + 10)
-        else:
-            self.value = 1
-        self.value_now = self.value
+#     def _status_calculation(self, level: int=50) -> int:
+#         super()._status_calculation(level)
 
-    def set_now(self, value: int):
-        if value < 1:
-            value = 1
-        self.value_now = value
+#     def status_update(self, effort: int = 0, individual: int = 31, level: int = 50):
+#         super().status_update(effort, individual, level)
+#         self.value_now = self.value
 
-    def print(self):
-        print(f"value:{self.value}\tbase:{self.basestatus}\tindividual{self.individual}\teffort{self.effort}\tnow:{self.value_now}")
+#     def set_now(self, value: int):
+#         if value < 1:
+#             value = 1
+#         self.value_now = value
+
+#     def print(self):
+#         print(f"value:{self.value}\tbase:{self.basestatus}\tindividual{self.individual}\teffort{self.effort}\tnow:{self.value_now}")
 
 class Poke:
-    def __init__(self,):
+    def __init__(self):
         self.status_list: "list[Union[StatusHP, Status]]" = [StatusHP()] + [Status() for _ in range(5)]
         self.ability_list: "list[str]" = []
         self.name: str = ""
@@ -198,6 +195,12 @@ class PokeDetail(Poke):
             self.terastal = data.terastal
             self.ability = data.ability
             self.move_list = data.move_list.copy()
+            for index, stat in enumerate(self.status_list):
+                if index == 0:
+                    stat.status_update(data.status[index][1], data.status[index][0], data.level)
+                    self.hp_now = stat.value
+                else:
+                    stat.status_update(data.status[index][1], data.status[index][0], data.status[index][2], data.level)
 
     def reset(self):
         self.re_init()
