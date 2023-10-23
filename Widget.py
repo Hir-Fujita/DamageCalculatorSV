@@ -93,8 +93,9 @@ class CustomNatureBox(tk.Button):
 
     def set(self, value: float):
         self.variable.set(value)
-        color, text = self.float_color(value)
-        self.config(text=text, bg=color)
+        if hasattr(self, "tk"):
+            color, text = self.float_color(value)
+            self.config(text=text, bg=color)
 
     def float_color(self, value):
         if value == 1:
@@ -567,6 +568,21 @@ class StatusWidget:
         if isinstance(self.status, Obj.Status):
             self.status_label.color_change(self.nature.variable.get())
 
+    def set_click(self):
+        if isinstance(self.status, Obj.Status):
+            self.status_label.bind("<Button-1>", lambda event: self._click(1.1))
+            self.status_label.bind("<Button-3>", lambda event: self._click(0.9))
+
+    def _click(self, value: float):
+        self.method(value)
+        variable = self.nature.variable.get()
+        if value != variable:
+            self.nature.variable.set(value)
+        else:
+            self.nature.variable.set(1)
+        self.method()
+
+
 class BannerWidget:
     def __init__(self, parent, method: Callable, index_number: int):
         self.method = method
@@ -891,6 +907,8 @@ class BattleWidget:
                 self.widget.rank_widgets[i-1].create(middle_frame)
                 self.widget.rank_widgets[i-1].config(width=3, font=font)
                 self.widget.rank_widgets[i-1].grid(row=3, column=i, padx=2, pady=1)
+                if self.side == tk.RIGHT:
+                    self.widget.status_widgets[i].set_click()
 
         bottom_frame = tk.LabelFrame(parent, text="わざ")
         bottom_frame.pack()
@@ -926,4 +944,5 @@ class BannerWidgetPage3(tk.Button):
 
     def show_menu(self, event):
         self.menu.post(event.x_root, event.y_root)
+
 

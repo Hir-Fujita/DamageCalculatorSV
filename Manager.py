@@ -270,7 +270,6 @@ class BattleManager:
                     menu.add_command(label=poke.name, command=lambda w=widget_index, p=poke_index: self.poke_select(w, p))
 
     def poke_select(self, widget_index: int, party_index: int):
-        [print(poke.name) for poke in self.poke_list]
         self.battle_widgets[widget_index].poke_select(self.poke_list[party_index])
         self.banners[widget_index].update(self.poke_list[party_index])
 
