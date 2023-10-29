@@ -8,11 +8,21 @@ from PIL import Image
 import numpy as np
 import cv2
 
-for name in ["あめ", "すなあらし", "にほんばれ", "ゆき"]:
-    image = Image.open(f"New_Pokemon/{name}.png")
-    image = image.resize((100, 100))
-    with open(f"New_Pokemon/Data/Image_data/misc/{name}", "wb") as f:
-        pickle.dump(image, f)
+with open("DamageCalculatorSV\Data\MoveData.csv", encoding="utf-8") as f:
+    reader = csv.reader(f)
+    pokedata = [row for row in reader]
+print(pokedata)
+for data in pokedata:
+    pp = data[-1]
+    if pp != "pp":
+        pp = int(data[-1])
+        print(pp + pp*0.6)
+
+# for name in ["あめ", "すなあらし", "にほんばれ", "ゆき"]:
+#     image = Image.open(f"New_Pokemon/{name}.png")
+#     image = image.resize((100, 100))
+#     with open(f"New_Pokemon/Data/Image_data/misc/{name}", "wb") as f:
+#         pickle.dump(image, f)
 
 # with open("New_Pokemon\体重.txt", "r", encoding="utf-8") as f:
 #     data = f.readlines()

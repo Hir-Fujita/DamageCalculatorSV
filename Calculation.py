@@ -29,7 +29,7 @@ def rank_int(value):
     else:
         return 0
 
-def fixed_num(hp: int, result: "list[int]") -> (int, int, str):
+def fixed_num(hp: int, result: tuple[int]) -> (int, int, str):
     min_dmg, max_dmg = result[0], result[-1]
     num, temp, count = 1, [], 0
     while min_dmg != 0:
@@ -50,18 +50,19 @@ def fixed_num(hp: int, result: "list[int]") -> (int, int, str):
 class DamageCalculator:
     def __init__(
             self,
-            attacker: Obj.PokeDetail,
-            attacker_field: Obj.PlayerField,
-            target: Obj.PokeDetail,
-            target_field: Obj.PlayerField,
-            field: Obj.Field,
-            move_index: int):
-        self.attacker = attacker
-        self.attacker_field = attacker_field
-        self.target = target
-        self.target_field = target_field
-        self.field = field
-        self.move = D.MOVEDATA.find(attacker.move_list[move_index], "name")
+            attacker: Obj.SendData,
+            attacker_field: Obj.SendData,
+            target: Obj.SendData,
+            target_field: Obj.SendData,
+            field: Obj.SendData,
+            move_name: str
+        ):
+        self.attacker: Obj.SendData = attacker
+        self.attacker_field: Obj.SendData = attacker_field
+        self.target: Obj.SendData = target
+        self.target_field: Obj.SendData = target_field
+        self.field: Obj.SendData = field
+        self.move = D.MOVEDATA.find(move_name, "name")
 
         self.log = []
         self.calc_log = []
@@ -127,8 +128,8 @@ class DamageCalculator:
         ratio = round(num / 4096, 1)
         self.log.append(f"{name}: *{ratio}")
 
-    def status_calculation(self, poke: Obj.PokeDetail, player: Obj.PlayerField, opponent_poke: Obj.PokeDetail, field: Obj.Field):
-        def paradox_check(poke: Obj.PokeDetail, field: Obj.Field) -> bool:
+    def status_calculation(self, poke: Obj.SendData, player: Obj.SendData, opponent_poke: Obj.SendData, field: Obj.SendData):
+        def paradox_check(poke: Obj.SendData, field: Obj.SendData) -> bool:
             """
             パラドックスの特性が発動するならTrue,しないならFalseを返す
             """
@@ -147,19 +148,19 @@ class DamageCalculator:
                 return False
 
         status: "list[list[int]]" = []
-        for index, stat in enumerate(poke.status_list):
+        for index, stat in enumerate(poke.status):
             if index == 0:
-                status.append([poke.hp_now, stat.value])
+                status.append([poke.hp_now, stat])
             else:
-                if rank_int(poke.rank_list[index-1]) > 0:
-                    rank = (rank_int(poke.rank_list[index-1]) +2) /2
+                if rank_int(poke.rank[index-1]) > 0:
+                    rank = (rank_int(poke.rank[index-1]) +2) /2
                     if opponent_poke.ability == "てんねん" and not self.gas_check():
                         if poke.ability != "かたやぶり":
                             rank = 1
                 else:
-                    rank = 2 /(2 - rank_int(poke.rank_list[index-1]))
-                num = math.floor(stat.value * rank)
-                status.append([stat.value, num])
+                    rank = 2 /(2 - rank_int(poke.rank[index-1]))
+                num = math.floor(stat * rank)
+                status.append([stat, num])
         if paradox_check(poke, field):
             max_stat = 0
             max_index = 0
@@ -177,7 +178,7 @@ class DamageCalculator:
         status[5][1] = self.speed_calc(poke, player, field, status[5][-1])
         return status
 
-    def speed_calc(self, poke: Obj.PokeDetail, player_field: Obj.PlayerField, field: Obj.Field, spd: int):
+    def speed_calc(self, poke: Obj.SendData, player_field: Obj.SendData, field: Obj.SendData, spd: int):
         speed = 4096
         if not self.gas_check():
             if poke.ability == "ようりょくそ" and field.weather == "にほんばれ":
@@ -360,20 +361,21 @@ class DamageCalculator:
         """
         天候が影響するならTrue,しないならFalseを返す
         """
-        if self.gas_check():
-            return True
-        else:
-            if self.attacker.ability == "エアロック" or self.attacker.ability == "ノーてんき":
-                return False
-            elif self.target.ability == "エアロック" or self.target.ability == "ノーてんき":
-                return False
-            else:
+        if self.attacker.ability == "エアロック" or self.attacker.ability == "ノーてんき":
+            if self.gas_check():
                 return True
+            return False
+        elif self.target.ability == "エアロック" or self.target.ability == "ノーてんき":
+            if self.gas_check():
+                return True
+            return False
+        else:
+            return True
 
     def move_power_check(self):
         if self.move_name in ["アシストパワー", "つけあがる"]:
             power = 20
-            for rank in self.attacker.rank_list:
+            for rank in self.attacker.rank:
                 if rank_int(rank) > 0:
                     power = power +(20 *rank_int(rank))
             self.move_power = power
@@ -509,15 +511,15 @@ class DamageCalculator:
             self.add(DMG, self.attacker.item, 5324)
         if self.attacker.item == "たつじんのおび" and self.type_effective(self.move_type, self.target_type) >= 2:
             self.add(DMG, self.attacker.item, 4915)
-        if self.attacker.item == "メトロノームx2":
+        if self.attacker.item == "メトロノーム+2":
             self.add(DMG, self.attacker.item, 4915)
-        if self.attacker.item == "メトロノームx3":
+        if self.attacker.item == "メトロノーム+3":
             self.add(DMG, self.attacker.item, 5734)
-        if self.attacker.item == "メトロノームx4":
+        if self.attacker.item == "メトロノーム+4":
             self.add(DMG, self.attacker.item, 6553)
-        if self.attacker.item == "メトロノームx5":
+        if self.attacker.item == "メトロノーム+5":
             self.add(DMG, self.attacker.item, 7372)
-        if self.attacker.item == "メトロノームx6":
+        if self.attacker.item == "メトロノーム+6":
             self.add(DMG, self.attacker.item, 8192)
         if self.type_effective(self.move_type, self.target_type) >= 2:
             if D.ITEMDATA.find(self.target.item, "name", "type") == f"_{self.move_type}":
@@ -666,15 +668,15 @@ class DamageCalculator:
                 self.add(ATK, self.attacker.ability, 6144)
             if self.attacker.ability == "いわはこび" and self.move_type == "いわ":
                 self.add(ATK, self.attacker.ability, 6144)
-            if self.attacker.ability == "そうだいしょうx1":
+            if self.attacker.ability == "そうだいしょう+1":
                 self.add(ATK, self.attacker.ability, 4506)
-            if self.attacker.ability == "そうだいしょうx2":
+            if self.attacker.ability == "そうだいしょう+2":
                 self.add(ATK, self.attacker.ability, 4915)
-            if self.attacker.ability == "そうだいしょうx3":
+            if self.attacker.ability == "そうだいしょう+3":
                 self.add(ATK, self.attacker.ability, 5325)
-            if self.attacker.ability == "そうだいしょうx4":
+            if self.attacker.ability == "そうだいしょう+4":
                 self.add(ATK, self.attacker.ability, 5734)
-            if self.attacker.ability == "そうだいしょうx5":
+            if self.attacker.ability == "そうだいしょう+5":
                 self.add(ATK, self.attacker.ability, 6144)
 
             if self.attacker.ability != "かたやぶり":
@@ -739,7 +741,7 @@ class DamageCalculator:
                 if self.target.ability == "こおりのりんぷん" and self.move_category == "特殊":
                     self.add(DMG, self.target.ability, 2048)
                 if self.field.ability_1 == "フレンドガード" or self.field.ability_2 == "フレンドガード":
-                    self.add(DMG, self.target.ability, 3072)
+                    self.add(DMG, "フレンドガード", 3072)
                 if self.target.ability == "ハードロック" and self.type_effective(self.move_type, self.target_type) >= 2:
                     self.add(DMG, self.target.ability, 3072)
                 if self.target.ability == "フィルター" and self.type_effective(self.move_type, self.target_type) >= 2:
@@ -815,6 +817,8 @@ class DamageCalculator:
         def power() -> int:
             """威力計算"""
             dmg = self.move_power
+            if dmg == 0:
+                return 0
             for num in self.move_damage_list:
                 dmg = my_round5(dmg * num / 4096)
             dmg = max(dmg, 1)
@@ -860,10 +864,10 @@ class DamageCalculator:
             else:
                 if self.attacker.terastal_flag and self.attacker.terastal == self.move_type and self.move_type in self.attacker_type[:2]:
                     num = my_round5(num * 8192 / 4096)
-                    self.calc_log.insert(0, "攻撃側: タイプ一致テラスタル")
+                    self.calc_log.insert(0, "攻撃側: タイプ一致テラスタル: *2.0")
                 elif self.move_type in self.attacker_type:
                     num = my_round5(num * 6144 / 4096)
-                    self.calc_log.insert(0, "攻撃側: タイプ一致")
+                    self.calc_log.insert(0, "攻撃側: タイプ一致: *1.5")
             effective = self.type_effective(self.move_type, self.target_type)
             if not self.gas_check():
                 if self.target.ability == "かぜのり" and D.MOVEDATA.find(self.move_name, "name", "かぜ") != "":
@@ -925,6 +929,8 @@ class DamageCalculator:
                 result = my_round5(result * num / 4096)
             return result
 
+        if power() == 0:
+            return 0
         self.calc_log = []
         result = math.floor(self.attacker.level * 2 / 5 + 2)
         result = math.floor(result * power() * attack() / deffence())

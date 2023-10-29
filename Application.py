@@ -14,11 +14,11 @@ class Application(tk.Frame):
     """
     アプリケーション
     """
+
     def __init__(self, master: tk.Tk=None):
         super().__init__(master)
-
         self.window_width = 1350
-        self.window_height = 700
+        self.window_height = 720
         master.geometry(f"{self.window_width}x{self.window_height}+100+100")
         master.title(f"{NAME}_{VERSION}")
         master.resizable(height=False, width=False)
@@ -115,6 +115,7 @@ class DamageCalculatorNote(ParentFrame):
         super().active_page()
         self.menu.add_command(label="    設定    ")
         self.menu.add_command(label=" あいことば ")
+        self.menu.add_command(label="debug", command=self.widget_manager.dmg_update)
 
 class SingleDamageCalculatorNote(ParentFrame):
     def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager):
@@ -141,7 +142,6 @@ class DoubleDamageCalculatorNote(ParentFrame):
         super().active_page()
         self.menu.add_command(label="    設定    ")
         self.menu.add_command(label=" あいことば ")
-        self.widget_manager.battle_manager.team_update()
 
 class StatusCalculatorNote(ParentFrame):
     def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager):
@@ -168,6 +168,7 @@ class TestNote(ParentFrame):
         super().active_page()
         self.menu.add_command(label="    設定    ")
         self.menu.add_command(label=" あいことば ")
+        self.menu.add_command(label="Debug", command=self.widget_manager.widget.poke.print)
 
 def main():
     win = tk.Tk()

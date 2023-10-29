@@ -11,15 +11,15 @@ from tkinter import filedialog
 FOLDER = f"{os.getcwd()}\DamageCalculatorSV"
 
 def open_file(path):
-    with open(path, "rb") as f:
+    with open(path,  "rb") as f:
         data = pickle.load(f)
     return data
 
-def save_file(path, data):
-    with open(path, "wb") as f:
-        pickle.dump(data, f)
+def save_file(path,  data):
+    with open(path,  "wb") as f:
+        pickle.dump(data,  f)
 
-def save_filedialogwindow(save_name: str, title: str, parent_folder: str, filetypes: "tuple[str, str]") -> str:
+def save_filedialogwindow(save_name: str,  title: str,  parent_folder: str,  filetypes: "tuple[str,  str]") -> str:
     save_folder = f"{FOLDER}/Data/{parent_folder}/"
     filepath = filedialog.asksaveasfilename(
         title=title,
@@ -30,7 +30,7 @@ def save_filedialogwindow(save_name: str, title: str, parent_folder: str, filety
     )
     return filepath
 
-def open_filedialogwindow(title: str, parent_folder: str, filetypes: "tuple[str, str]") -> str:
+def open_filedialogwindow(title: str,  parent_folder: str,  filetypes: "tuple[str,  str]") -> str:
     load_folder = f"{FOLDER}/Data/{parent_folder}"
     filepath = filedialog.askopenfilename(
         title=title,
@@ -40,74 +40,83 @@ def open_filedialogwindow(title: str, parent_folder: str, filetypes: "tuple[str,
     )
     return filepath
 
-
 class Setting:
-    def __init__(self, path: str):
+    def __init__(self,  path: str):
         self.setting_ini = configparser.ConfigParser()
-        self.setting_ini.read(path, encoding="utf-8")
+        self.setting_ini.read(path,  encoding="utf-8")
         self.setting = self.setting_ini["USER_SETTING"]
 
 class Text:
-    def __init__(self, path: str):
-        with open(path, "r", encoding="UTF-8") as f:
+    def __init__(self,  path: str):
+        with open(path,  "r",  encoding="UTF-8") as f:
             datalist = f.readlines()
-            self.data = [row.replace("\n", "") for row in datalist]
+            self.data = [row.replace("\n",  "") for row in datalist]
 
     def poke_item(self):
         data = [tuple(d.split(":")) for d in self.data]
         return data
 
 class PokeData:
-    '''
-    テキストファイルから読み込んで、ポケモンのデータを管理する
-    '''
-    def __init__(self, path: Union[str, "list[str]"]):
-        if isinstance(path, list):
-            data = path
-        else:
-            with open(path, "r", encoding="utf-8") as f:
-                data = f.readlines()
-            data = [d.replace("\n", "") for d in data]
-        self.name: str = data[0]
-        self.level: int = int(data[1])
-        self.item: str  = data[2]
-        self.ability: str = data[3]
-        self.terastal: str = data[4]
-        self.move_list: "list[str]" = data[5].split("/")
-        status = data[6:12]
-        self.status = []
-        for index, s in enumerate(status):
+    def __init__(self):
+        self.name: str = ""
+        self.level: int = 50
+        self.item: str  = ""
+        self.ability: str = ""
+        self.terastal: str = ""
+        self.move_list: list[str] = ["" for i in range(4)]
+        self.status: list[tuple[int | float]] = [(0,  0),  (0,  0,  1.0),  (0,  0,  1.0),  (0,  0,  1.0),  (0,  0,  1.0),  (0,  0,  1.0)]
+        self.memo: list[str] = []
+
+    @classmethod
+    def load(cls,  path: str):
+        with open(path,  "r",  encoding="utf-8") as f:
+            data = f.readlines()
+        data = [d.replace("\n",  "") for d in data]
+        cls = cls.generate(data)
+        return cls
+
+    @classmethod
+    def generate(cls,  texts: list[str]):
+        cls.name: str = texts[0]
+        cls.level: int = int(texts[1])
+        cls.item: str  = texts[2]
+        cls.ability: str = texts[3]
+        cls.terastal: str = texts[4]
+        cls.move_list: "list[str]" = texts[5].split("/")
+        status = texts[6:12]
+        cls.status = []
+        for index,  s in enumerate(status):
             stat = s.split("/")
             if index == 0:
-                self.status.append((int(stat[0]), int(stat[1])))
+                cls.status.append((int(stat[0]),  int(stat[1])))
             else:
-                self.status.append((int(stat[0]), int(stat[1]), float(stat[2])))
-        self.memo = [d for d in data[12:] if d != ""]
+                cls.status.append((int(stat[0]),  int(stat[1]),  float(stat[2])))
+        cls.memo = [d for d in texts[12:] if d != ""]
+        return cls
 
     def save(self):
-        data = [self.name, self.level, self.item, self.ability, self.terastal, "/".join(self.move_list)]
+        data = [self.name,  self.level,  self.item,  self.ability,  self.terastal,  "/".join(self.move_list)]
         for s in self.status:
-            s = list(map(str, s))
-        [data.append("/".join(list(map(str, s)))) for s in self.status]
+            s = list(map(str,  s))
+        [data.append("/".join(list(map(str,  s)))) for s in self.status]
         return data + self.memo
 
 class CSV:
-    def __init__(self, path: str):
+    def __init__(self,  path: str):
         self.kana = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもらりるれろやゆよわをんがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽゔぁぃぅぇぉゃゅょっｎー"
         self.kata = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモラリルレロヤユヨワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポヴァィゥェォャュョッンー"
-        with open(path, encoding="utf-8") as f:
+        with open(path,  encoding="utf-8") as f:
             reader = csv.reader(f)
             self.data = [row for row in reader]
         self.key = self.data.pop(0)
         self.name_list = [data[self.key_index("name")] for data in self.data]
-        self.name_list_plus = [data for data in self.data if not "+" in data]
         if "kata" in self.key:
             self.kata_list = [data[self.key_index("kata")] for data in self.data]
 
-    def key_index(self, key: str):
+    def key_index(self,  key: str):
         return self.key.index(key)
 
-    def find(self, value: str, key: str, return_key: str="") -> str:
+    def find(self,  value: str,  key: str,  return_key: str="") -> str:
         if not value:
             return "0"
         else:
@@ -118,20 +127,23 @@ class CSV:
                 data = data[self.key_index(return_key)]
             return data
 
-    def autocomplete(self, text: str) -> "list[str]":
+    def autocomplete(self,  text: str,  plus_delete: bool=False) -> "list[str]":
         if not text:
+            results = self.name_list.copy()
             return self.name_list
         else:
             result = [self.kata[self.kana.index(t)] if t in self.kana else t for t in text]
             result = "".join(result)
             if "kata" in self.key:
-                results = [self.name_list[index] for index, name in enumerate(self.kata_list) if result in name]
+                results = [self.name_list[index] for index,  name in enumerate(self.kata_list) if result in name]
             else:
                 results = [name for name in self.name_list if result in name]
-            return results
+        if plus_delete:
+            results = [name for name in results if not "+" in name]
+        return results
 
 class Type:
-    def __init__(self, path: str):
+    def __init__(self,  path: str):
         self.dic = {
             "ノーマル": 0,
             "ほのお": 1,
@@ -154,17 +166,17 @@ class Type:
         }
         self.list = list(self.dic.keys())
         self.dic["Color"] = 18
-        with open(path, encoding="utf-8") as f:
+        with open(path,  encoding="utf-8") as f:
             reader = csv.reader(f)
             self.data = [row for row in reader]
 
-    def index(self, key: str) -> int:
+    def index(self,  key: str) -> int:
         return self.dic[key]
 
-    def calc(self, attack: str, target: str) -> float:
+    def calc(self,  attack: str,  target: str) -> float:
         return float(self.data[self.index(attack)][self.index(target)])
 
-    def typecolor(self, type: str) -> str:
+    def typecolor(self,  type: str) -> str:
         return self.data[self.index(type)][self.index("Color")]
 
 POKEDATA = CSV(f"{FOLDER}/Data/PokeData.csv")
@@ -172,8 +184,8 @@ MOVEDATA = CSV(f"{FOLDER}/Data/MoveData.csv")
 ITEMDATA = CSV(f"{FOLDER}/Data/ItemData.csv")
 ITEM_POKE = Text(f"{FOLDER}/Data/AutoItem.txt").poke_item()
 TYPEDATA = Type(f"{FOLDER}/Data/TypeData.csv")
-LABEL = ["HP", "攻撃", "防御", "特攻", "特防", "素早"]
-FIELD = ["", "エレキフィールド", "グラスフィールド", "サイコフィールド", "ミストフィールド"]
-WEATHER = ["", "にほんばれ", "あめ", "すなあらし", "ゆき"]
-BADSTAT = ["", "まひ", "やけど", "どく", "もうどく", "こおり", "ねむり", "ひんし", "じゅうでん"]
-ABIILITY = ["", "わざわいのうつわ", "わざわいのつるぎ", "わざわいのおふだ", "わざわいのたま", "フレンドガード", "パワースポット", "バッテリー", "はがねのせいしん"]
+LABEL = ["HP",  "攻撃",  "防御",  "特攻",  "特防",  "素早"]
+FIELD = ["",  "エレキフィールド",  "グラスフィールド",  "サイコフィールド",  "ミストフィールド"]
+WEATHER = ["",  "にほんばれ",  "あめ",  "すなあらし",  "ゆき"]
+BADSTAT = ["",  "まひ",  "やけど",  "どく",  "もうどく",  "こおり",  "ねむり",  "ひんし",  "じゅうでん"]
+ABIILITY = ["",  "わざわいのうつわ",  "わざわいのつるぎ",  "わざわいのおふだ",  "わざわいのたま",  "フレンドガード",  "パワースポット",  "バッテリー",  "はがねのせいしん"]
