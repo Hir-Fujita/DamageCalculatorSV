@@ -505,29 +505,31 @@ class Page4:
 
 class Page5:
     class PokeManager(Manager.PokeWidgetManager):
-        def __init__(self, side: str, party_manager: Manager.PartyManager):
+        def __init__(self, side: str, party_manager: Manager.PartyManager, dmg_update_method: Callable):
+            self.dmg_update_method = dmg_update_method
             super().__init__(Obj.PokeDetail())
-            self.item_widget.add_method(self.update)
-            self.terastal_widget.add_method(self.update)
-            self.terastal_flag_widget.add_method(self.update)
-            self.status_widget.widgets[0].effort.add_method(self.hp_set)
-            self.status_widget.widgets[0].individual.add_method(self.hp_set)
-            [widget.effort.add_method(self.update) for widget in self.status_widget.widgets]
-            [widget.individual.add_method(self.update) for widget in self.status_widget.widgets]
-            [widget.nature.add_method(self.update) for widget in self.status_widget.widgets[1:]]
-            [rank.add_method(self.update) for rank in self.rank_widgets]
-            self.ability_widget.add_method(self.update)
-            self.ability_flag_widget.add_method(self.update)
-            self.move_flag_widget.add_method(self.update)
-            self.bad_stat_widget.add_method(self.update)
+            self.item_widget.add_method(self.update, self.dmg_update_method)
+            self.terastal_widget.add_method(self.update, self.dmg_update_method)
+            self.terastal_flag_widget.add_method(self.update, self.dmg_update_method)
+            self.status_widget.widgets[0].effort.add_method(self.hp_set, self.dmg_update_method)
+            self.status_widget.widgets[0].individual.add_method(self.hp_set, self.dmg_update_method)
+            [widget.effort.add_method(self.update, self.dmg_update_method) for widget in self.status_widget.widgets]
+            [widget.individual.add_method(self.update, self.dmg_update_method) for widget in self.status_widget.widgets]
+            [widget.nature.add_method(self.update, self.dmg_update_method) for widget in self.status_widget.widgets[1:]]
+            [rank.add_method(self.update, self.dmg_update_method) for rank in self.rank_widgets]
+            self.ability_widget.add_method(self.update, self.dmg_update_method)
+            self.ability_flag_widget.add_method(self.update, self.dmg_update_method)
+            self.move_flag_widget.add_method(self.update, self.dmg_update_method)
+            self.bad_stat_widget.add_method(self.update, self.dmg_update_method)
             self.side = side
             self.party_manager: Manager.PartyManager = party_manager
             self.banner = Wid.ImageWidget(self.poke, self.side, self.party_manager.menu, self.menu_method_config, self.poke_select_index)
             self.hp_widget = Wid.BattleHPWidgets(self.poke, self.side, 200)
-            self.hp_widget.hp_now_widget.add_method(self.update)
-            [widget.add_method(self.update, self.poke.pp_set) for widget in self.move_widgets]
+            self.hp_widget.hp_now_widget.add_method(self.update, self.dmg_update_method)
+            [widget.add_method(self.update, self.poke.pp_set, self.dmg_update_method) for widget in self.move_widgets]
             self.add_buttons = [Wid.CustomTuggleButton("計算", self.poke.calc_list[i], self.update) for i in range(4)]
             self.move_counters = [Wid.CustomCountBox(self.poke.pp_list[i], self.update) for i in range(4)]
+            [btn.add_method(self.dmg_update_method) for btn in self.add_buttons]
 
         def poke_select(self, index: int):
             self.poke.paste(self.party_manager.list[index].copy())
@@ -557,21 +559,22 @@ class Page5:
 
 
     class BattleManager:
-        def __init__(self, side: str, party_manager):
+        def __init__(self, side: str, party_manager, dmg_update_method: Callable):
             self.side = side
+            self.dmg_update_method = dmg_update_method
             self.party_manager: Manager.PartyManager = party_manager
             self.player = Manager.PlayerFieldManager()
-            self.pokemons = [Page5.PokeManager(self.side, self.party_manager) for i in range(2)]
+            self.pokemons = [Page5.PokeManager(self.side, self.party_manager, self.dmg_update_method) for i in range(2)]
 
     def __init__(self, parent, manager: Manager.Manager):
         self.manager = manager
 
-        self.left = self.BattleManager(tk.LEFT, self.manager.party)
+        self.left = self.BattleManager(tk.LEFT, self.manager.party, self.update)
         left_frame = tk.Frame(parent)
         left_frame.pack(side=tk.LEFT)
         self.manager.party.widget.create(left_frame)
 
-        self.right = self.BattleManager(tk.RIGHT, self.manager.enemy)
+        self.right = self.BattleManager(tk.RIGHT, self.manager.enemy, self.update)
         right_frame = tk.Frame(parent)
         right_frame.pack(side=tk.RIGHT)
         self.manager.enemy.widget.create(right_frame)
@@ -723,6 +726,10 @@ class Page5:
         col = 2 if side == tk.LEFT else 0
         widget.help_widget.grid(row=0, column=col, padx=2, pady=2)
         widget.crit_widget.grid(row=1, column=col, padx=2, pady=2)
+
+    def update(self):
+        self.damage_calc(tk.LEFT)
+        self.damage_calc(tk.RIGHT)
 
     def field_check(self, side: str, attacker_index: int, target_index: int) -> Obj.SendData:
         def check_index(index: int) -> int:

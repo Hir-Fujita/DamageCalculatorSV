@@ -501,6 +501,8 @@ class DamageCalculator:
             self.add(ATK, self.attacker.item, 6144)
         if self.attacker.item == "でんきだま" and self.attacker.name == "ピカチュウ":
             self.add(ATK, self.attacker.item, 8192)
+        if self.attacker.item in ["かまどのめん", "いどのめん", "いしずえのめん"] and "オーガポン" in self.attacker.name:
+            self.add(MOVE, self.attacker.item, 4915)
         if self.target.item == "しんかのきせき":
             self.add(DEF, self.target.item, 6144)
         if self.target.item == "とつげきチョッキ" and self.move_category == "特殊":
@@ -579,7 +581,8 @@ class DamageCalculator:
                 self.move_power = self.move_power *2
                 self.log.append(f"{self.move_name}: 効果発動")
             if self.move_name == "はたきおとす":
-                self.add(MOVE, self.move_name, 6144)
+                if not self.target.item in ["かまどのめん", "いどのめん", "いしずえのめん"] and not "オーガポン" in self.target.name:
+                    self.add(MOVE, self.move_name, 6144)
             if self.move_name == "かたきうち":
                 self.add(MOVE, self.move_name, 8192)
 

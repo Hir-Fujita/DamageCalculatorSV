@@ -13,6 +13,17 @@ import Object as Obj
 import Process as Pr
 import Calculation as Calc
 
+class TimeCounter:
+    @classmethod
+    def start(self):
+        self.start_time = time.time()
+
+    @classmethod
+    def stop(self, text: str=""):
+        result = time.time() - self.start_time
+        print(f"{text}にかかった時間: {result} 秒")
+
+
 class Method:
     def __init__(self, method: Callable=None):
         if method is None:
