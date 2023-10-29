@@ -8,15 +8,45 @@ from PIL import Image
 import numpy as np
 import cv2
 
-with open("DamageCalculatorSV\Data\MoveData.csv", encoding="utf-8") as f:
-    reader = csv.reader(f)
-    pokedata = [row for row in reader]
-print(pokedata)
-for data in pokedata:
-    pp = data[-1]
-    if pp != "pp":
-        pp = int(data[-1])
-        print(pp + pp*0.6)
+import tkinter as tk
+
+def show_detail(event):
+    detail_window.geometry(f"+{event.x_root+10}+{event.y_root+10}")  # マウスカーソルの位置にポップアップウィンドウを配置
+    detail_label.config(text="詳細情報: これはマウスカーソル位置に表示されるテキストです")
+    detail_window.deiconify()
+
+def hide_detail(event):
+    detail_window.withdraw()
+
+root = tk.Tk()
+root.title("マウスオーバー詳細表示")
+
+# ウィジェット
+widget = tk.Label(root, text="マウスを重ねてみてください")
+widget.pack(padx=20, pady=20)
+
+# ポップアップウィンドウ
+detail_window = tk.Toplevel(root)
+detail_window.overrideredirect(True)
+detail_window.withdraw()
+detail_label = tk.Label(detail_window, text="")
+detail_label.pack()
+
+widget.bind("<Enter>", show_detail)  # マウスカーソルがウィジェットに入ったとき
+widget.bind("<Leave>", hide_detail)  # マウスカーソルがウィジェットから出たとき
+
+root.mainloop()
+
+
+# with open("DamageCalculatorSV\Data\MoveData.csv", encoding="utf-8") as f:
+#     reader = csv.reader(f)
+#     pokedata = [row for row in reader]
+# print(pokedata)
+# for data in pokedata:
+#     pp = data[-1]
+#     if pp != "pp":
+#         pp = int(data[-1])
+#         print(pp + pp*0.6)
 
 # for name in ["あめ", "すなあらし", "にほんばれ", "ゆき"]:
 #     image = Image.open(f"New_Pokemon/{name}.png")

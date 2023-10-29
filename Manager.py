@@ -19,8 +19,8 @@ class Manager:
 
 class PartyManager:
     def __init__(self, side: str):
-        self.list = [Obj.PokeDetail() for i in range(6)]
-        self.back_up = [Obj.PokeDetail() for i in range(6)]
+        self.list: list[Obj.PokeDetail] = [Obj.PokeDetail() for i in range(6)]
+        self.back_up: list[Obj.PokeDetail] = [Obj.PokeDetail() for i in range(6)]
         self.menu = tk.Menu(None, tearoff=0)
         [self.menu.add_command(label=i) for i in range(6)]
         self.widget = Wid.ButtlePartyWidget(side, self.list, self.menu_update)
@@ -38,6 +38,13 @@ class PartyManager:
                     break
         else:
             self.widget.update()
+
+    def get_index(self, id: str) -> int | None:
+        for index, poke in enumerate(self.list):
+            if poke.id == id:
+                return index
+        else:
+            return None
 
     def create_backup(self, index: int=None):
         if index is None:

@@ -54,15 +54,13 @@ class DamageCalculator:
             attacker_field: Obj.SendData,
             target: Obj.SendData,
             target_field: Obj.SendData,
-            field: Obj.SendData,
-            move_name: str
+            field: Obj.SendData
         ):
         self.attacker: Obj.SendData = attacker
         self.attacker_field: Obj.SendData = attacker_field
         self.target: Obj.SendData = target
         self.target_field: Obj.SendData = target_field
         self.field: Obj.SendData = field
-        self.move = D.MOVEDATA.find(move_name, "name")
 
         self.log = []
         self.calc_log = []
@@ -79,16 +77,16 @@ class DamageCalculator:
         self.attack = 0
         self.defence = 0
 
-        self.move_name = self.move[D.MOVEDATA.key_index("name")]
-        self.move_type = self.move[D.MOVEDATA.key_index("type")]
-        self.move_power = int(self.move[D.MOVEDATA.key_index("power")])
-        self.move_category = self.move[D.MOVEDATA.key_index("category")]
-
         self.result = 0
         self.drain = []
         self.recoil = []
 
-    def calculation(self):
+    def calculation(self, move_name: str):
+        self.move = D.MOVEDATA.find(move_name, "name")
+        self.move_name = self.move[D.MOVEDATA.key_index("name")]
+        self.move_type = self.move[D.MOVEDATA.key_index("type")]
+        self.move_power = int(self.move[D.MOVEDATA.key_index("power")])
+        self.move_category = self.move[D.MOVEDATA.key_index("category")]
         if self.move_category in ["物理", "特殊"]:
             self.move_category_change()
             self.poke_type_change()

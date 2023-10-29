@@ -142,6 +142,7 @@ class DoubleDamageCalculatorNote(ParentFrame):
         super().active_page()
         self.menu.add_command(label="    設定    ")
         self.menu.add_command(label=" あいことば ")
+        self.menu.add_command(label="debug", command=lambda: self.widget_manager.damage_calc(tk.LEFT))
 
 class StatusCalculatorNote(ParentFrame):
     def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager):
@@ -162,7 +163,7 @@ class TestNote(ParentFrame):
         self.widget_manager = Note.Page6(self.frame)
 
     def get_tab_name(self) -> str:
-        return "ポケモンなんじゃろな"
+        return "デフォルト設定"
 
     def active_page(self):
         super().active_page()

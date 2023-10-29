@@ -47,11 +47,11 @@ class ImageGenerator:
         text_image = self.create_text(f"+{num}")
         return text_image
 
-    def create_text(self, text: str, width=2) -> Image.Image:
+    def create_text(self, text: str, color: str="white", width=2) -> Image.Image:
         text_image = Image.new("RGBA", (400, 400), (0, 0, 0, 0))
         draw = ImageDraw.Draw(text_image)
         font = ImageFont.truetype(f"{Data.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 40)
-        draw.text((0, 0), text, fill="white", stroke_width=width, stroke_fill="black", font=font)
+        draw.text((0, 0), text, fill=color, stroke_width=width, stroke_fill="black", font=font)
         text_image = text_image.crop(text_image.split()[-1].getbbox())
         return text_image
 
@@ -241,7 +241,7 @@ class ImageGenerator:
         return ImageTk.PhotoImage(image)
 
     @classmethod
-    def create_battle_button(cls, poke: Obj.PokeDetail, mirror: bool, gray: bool=False):
+    def create_battle_button(cls, poke: Obj.PokeDetail, mirror: bool, dmg: tuple[int], gray: bool=False):
         image = Image.new("RGBA", (170, 80), (0, 0, 0, 0))
         if poke.terastal_flag.get() and poke.terastal.get() != "":
             terastal_img = cls.img_open(cls, poke.terastal.get(), "terastal", (100, 100))
@@ -266,16 +266,25 @@ class ImageGenerator:
             if mirror:
                 item_image = ImageOps.mirror(item_image)
             image.paste(item_image, (image.size[0]-item_image.size[0], image.size[1]-item_image.size[1]), mask=item_image)
-        move = cls.create_text(cls, "\n".join([move.get() if move.get() else "." for move in poke.move_list]), 4)
+        move = cls.create_text(cls, "\n".join([move.get() if move.get() else "." for move in poke.move_list]), width=4)
         move.thumbnail((200, 60))
         if mirror:
             move = ImageOps.mirror(move)
         image.paste(move, (0, image.size[1]-move.size[1]), move)
+        if poke.bad_stat.get() in ["まひ", "やけど", "どく", "もうどく", "ねむり", "こおり"]:
+            dic = {"まひ": (255,215,0), "やけど": (255,127,80), "どく": (153,102,204), "もうどく": (153,102,204), "ねむり": (230,230,250), "こおり": (0,255,255)}
+            bad_stat = cls.create_text(cls, poke.bad_stat.get(), dic[poke.bad_stat.get()], 4)
+            bad_stat.thumbnail((100, 20))
+            if mirror:
+                bad_stat = ImageOps.mirror(bad_stat)
+            image.paste(bad_stat, (image.size[0] -bad_stat.size[0]-5, 15), bad_stat)
+
         if mirror:
             image = ImageOps.mirror(image)
         hp = poke.status_list[0].value.get()
-        dmg = hp - poke.hp_now.get() + poke.hp_result.get()
-        hp_img = cls.create_hp_image((160, 10), hp, dmg, dmg, tk=False)
+        min = hp - poke.hp_now.get() + dmg[0]
+        max = hp - poke.hp_now.get() + dmg[1]
+        hp_img = cls.create_hp_image((160, 10), hp, max, min, tk=False)
         image.paste(hp_img, (5, 0))
         if gray:
             image = image.convert("L")

@@ -266,8 +266,7 @@ class PokeDetail(Poke):
             if isinstance(status, Status):
                 status.nature.set(1.1 if max else 1.0)
             status.status_update()
-        return poke
-
+        return poke.get()
 
 
 class PlayerField:
@@ -280,6 +279,7 @@ class PlayerField:
 
     def get(self):
         return SendData().get_player(self)
+
 
 class Field:
     def __init__(self):

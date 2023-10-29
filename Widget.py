@@ -12,7 +12,6 @@ import Data
 import Object as Obj
 import Process as Pr
 import Calculation as Calc
-import Manager
 
 class Method:
     def __init__(self, method: Callable=None):
@@ -23,10 +22,6 @@ class Method:
 
     def add_method(self, *methods: Callable):
         [self.method.append(met) for met in methods]
-        # if isinstance(method, list):
-        #     [self.method.append(met) for met in method]
-        # else:
-        #     self.method.append(method)
 
     def run_method(self):
         if self.method != []:
@@ -224,15 +219,15 @@ class CustomRankBox(CustomSpinBox):
         self.set("")
 
 
-class CustomHPNowBox(CustomSpinBox):
+class CustomHPNowBox(tk.Spinbox, Method):
     def __init__(self, value: tk.Variable, max_value: tk.Variable, method: Callable=None):
-        CustomSpinBox.__init__(self, method)
+        Method.__init__(self, method)
         self.max_variable = max_value
         self.now_variable = value
 
     def create(self, parent, font=None):
         tk.Spinbox.__init__(self, parent)
-        self.config(textvariable=self.now_variable, width=3, command=self.run_method, from_=1, to=1)
+        self.config(textvariable=self.now_variable, width=3, command=self.run_method, from_=1, to=1, increment=1)
         self.bind("<MouseWheel>", lambda event: self.mousewheel(event))
         self.bind("<Button-3>", lambda event: self.rightclick())
         self.bind("<KeyRelease>", lambda event: self.key_input())
@@ -726,8 +721,8 @@ class ButtlePartyWidget:
             tk.Button.__init__(self, parent)
             self.update()
 
-        def update(self):
-            self.image = Pr.ImageGenerator.create_battle_button(self.poke, self.mirror)
+        def update(self, dmg: tuple[int]=(0, 0)):
+            self.image = Pr.ImageGenerator.create_battle_button(self.poke, self.mirror, dmg)
             self.config(image=self.image)
             self.method()
 
@@ -736,7 +731,7 @@ class ButtlePartyWidget:
             self.update()
 
     def __init__(self, side: str, poke_list: list[Obj.PokeDetail], method: Callable):
-        self.buttons = [self.ButtlePokeButton(poke_list[i], side, method) for i in range(6)]
+        self.buttons = [self.ButtlePokeButton(poke, side, method) for poke in poke_list]
 
     def create(self, parent):
         for btn in self.buttons:
@@ -758,19 +753,30 @@ class BattleHPWidgets:
             self.width = width
             self.text = text
             self.image = Pr.ImageGenerator.create_hp_image((width, 15), 1, 0, 0)
+            self.variable = tk.StringVar()
+            self.pop = CustomPopupWindow(self.variable)
 
         def create(self, parent):
             frame = tk.LabelFrame(parent, text=self.text)
             frame.pack()
             tk.Label.__init__(self, frame, image=self.image)
+            self.bind("<Enter>", lambda event: self.mouse_enter(event))
+            self.bind("<Leave>", lambda event: self.mouse_leave())
             self.pack()
 
-        def update(self, poke: Obj.PokeDetail, min_dmg: int=0, max_dmg: int=0):
+        def update(self, poke: Obj.PokeDetail, min_dmg: int=0, max_dmg: int=0, result_text: list[str]=[""]):
+            self.variable.set("\n".join(result_text))
             hp = poke.status_list[0].value.get()
             min_dmg = hp - poke.hp_now.get() + min_dmg
             max_dmg = hp - poke.hp_now.get() + max_dmg
             self.image = Pr.ImageGenerator.create_hp_image((self.width, 15), hp, max_dmg, min_dmg)
             self.config(image=self.image)
+
+        def mouse_enter(self, event: tk.Event):
+            self.pop.create(event)
+
+        def mouse_leave(self):
+            self.pop.destroy_window()
 
     def __init__(self, poke: Obj.PokeDetail, side: str, width: int):
         self.poke = poke
@@ -788,18 +794,16 @@ class BattleHPWidgets:
         self.calc_result.create(parent)
         self.calc_result.pack()
 
-    def update(self, dmg: list[tuple[int]]=[(0, 0), (0, 0), (0, 0)]):
-        self.max_result.update(self.poke, dmg[0][0], dmg[0][1])
-        self.min_result.update(self.poke, dmg[1][0], dmg[1][1])
-        self.calc_result.update(self.poke, dmg[2][0], dmg[2][1])
-
-    def add_method(self, method: Callable):
-        self.hp_now_widget.add_method(method)
+    def update(self, dmg: list[tuple[int | list[str]]]=[(0, 0, [""]), (0, 0, [""]), (0, 0, [""])]):
+        self.max_result.update(self.poke, dmg[0][0], dmg[0][1], dmg[0][2])
+        self.min_result.update(self.poke, dmg[1][0], dmg[1][1], dmg[1][2])
+        self.calc_result.update(self.poke, dmg[2][0], dmg[2][1], dmg[2][2])
 
 
 class ImageWidget(tk.Label):
-    def __init__(self, poke: Obj.PokeDetail, side: str, menu: tk.Menu, menu_method: Callable):
+    def __init__(self, poke: Obj.PokeDetail, side: str, menu: tk.Menu, menu_method: Callable, wheel_method: Callable):
         self.method = menu_method
+        self.wheel_method = wheel_method
         self.poke = poke
         self.menu = menu
         self.mirror = False if side == tk.LEFT else True
@@ -809,6 +813,7 @@ class ImageWidget(tk.Label):
         tk.Label.__init__(self, parent, image=self.image, relief="solid", borderwidth=2)
         self.bind("<Button-1>", lambda event: self.show_menu(event))
         self.bind("<Button-3>", lambda event: self.show_menu(event))
+        self.bind("<MouseWheel>", lambda event: self.mouse_wheel(event))
 
     def update(self):
         self.image = Pr.ImageGenerator.create_battle_banner(self.poke, self.mirror)
@@ -820,3 +825,31 @@ class ImageWidget(tk.Label):
             self.menu.post(event.x_root, event.y_root)
         else:
             self.menu.post()
+
+    def mouse_wheel(self, event: tk.Event):
+        if event.delta > 0:
+            self.wheel_method(-1)
+        else:
+            self.wheel_method(1)
+
+
+class CustomPopupWindow:
+    def __init__(self, variable: tk.Variable):
+        self.variable = variable
+        self.window = None
+
+    def create(self, event: tk.Event):
+        if self.variable.get():
+            self.window = tk.Toplevel()
+            self.window.overrideredirect(True)
+            # self.window.geometry(f"+{event.x_root+10}+{event.y_root+10}")
+            self.window.configure(bg="white")
+            label = tk.Label(self.window, textvariable=self.variable, bg="white")
+            label.pack(pady=5, padx=5)
+            width = label.winfo_reqwidth()
+            height = label.winfo_reqheight()
+            self.window.geometry(f"{width+10}x{height+10}+{event.x_root+10}+{event.y_root+10}")
+
+    def destroy_window(self):
+        if self.window is not None:
+            self.window.destroy()
