@@ -140,6 +140,12 @@ def main():
     win = tk.Tk()
     app = App(master=win)
     app.mainloop()
+    import io
+    from PIL import Image
+    import requests
+    image = Image.open(
+                io.BytesIO(requests.get(f"https://www.pokemon-card.com/assets/images/card_images/large/SV4M/044350_P_TETSUNOBUJINEX.jpg").content))
+    image.show()
 
 if __name__ == "__main__":
     main()

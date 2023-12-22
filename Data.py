@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from typing import Union
+import json
 import pickle
 import csv
 import configparser
@@ -18,6 +18,11 @@ def open_file(path):
 def save_file(path,  data):
     with open(path,  "wb") as f:
         pickle.dump(data,  f)
+
+def open_json(filename: str) -> dict:
+    with open(f"{FOLDER}/Data/{filename}") as f:
+        return json.load(f)
+
 
 def save_filedialogwindow(save_name: str,  title: str,  parent_folder: str,  filetypes: "tuple[str,  str]") -> str:
     save_folder = f"{FOLDER}/Data/{parent_folder}/"
@@ -105,7 +110,7 @@ class CSV:
     def __init__(self,  path: str):
         self.kana = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもらりるれろやゆよわをんがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽゔぁぃぅぇぉゃゅょっｎー"
         self.kata = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモラリルレロヤユヨワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポヴァィゥェォャュョッンー"
-        with open(path,  encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             reader = csv.reader(f)
             self.data = [row for row in reader]
         self.key = self.data.pop(0)
