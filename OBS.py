@@ -1,10 +1,10 @@
 import obsws_python as obsws
 
 class OBS:
-    def __init__(self, host, port, password):
-        self.host = host
-        self.port = port
-        self.password = password
+    def __init__(self, obs_data: dict):
+        self.host = obs_data["host"]
+        self.port = obs_data["port"]
+        self.password = obs_data["password"]
 
     def connect(self):
         self.ws = obsws.ReqClient(

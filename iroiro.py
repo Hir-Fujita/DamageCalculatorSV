@@ -7,56 +7,65 @@ import pickle
 from PIL import Image
 import numpy as np
 import cv2
+import Data
 
 import tkinter as tk
 
-def show_detail(event):
-    detail_window.geometry(f"+{event.x_root+10}+{event.y_root+10}")  # マウスカーソルの位置にポップアップウィンドウを配置
-    detail_label.config(text="詳細情報: これはマウスカーソル位置に表示されるテキストです")
-    detail_window.deiconify()
 
-def hide_detail(event):
-    detail_window.withdraw()
+def pil_cv2(image: Image.Image) -> cv2.Mat:
+    return np.array(image, dtype=np.uint8)
 
-root = tk.Tk()
-root.title("マウスオーバー詳細表示")
+def create_1():
+    src = Image.open("DamageCalculatorSV/Image_Process/2023-07-05_21-34-33.png").crop((810, 150, 910, 560))
+    color = src.getpixel((10, 10))
+    img_list = os.listdir("DamageCalculatorSV/Data/Image_data/pokemon")
+    for path in img_list:
+        img: Image.Image = Data.open_file(f"DamageCalculatorSV/Data/Image_data/pokemon/{path}")
+        img = img.resize((100, 100))
+        img = img.crop(img.split()[-1].getbbox())
+        back = Image.new("RGB", img.size, color)
+        back.paste(img, mask=img)
+        img = back.convert("L")
+        img = pil_cv2(img)
+        Data.save_file(f"DamageCalculatorSV\Data\Image_data\matching_data/{path}", img)
 
-# ウィジェット
-widget = tk.Label(root, text="マウスを重ねてみてください")
-widget.pack(padx=20, pady=20)
+def create_poke_image():
+    """
+    ポケモンの画像データを生成
+    """
+    image_list = os.listdir("DamageCalculatorSV\Image")
+    for path in image_list:
+        img = Image.open(f"DamageCalculatorSV\Image/{path}")
+        img = img.resize((200, 200))
+        img = img.crop(img.split()[-1].getbbox())
+        name = path.replace(".png", "")
+        Data.save_file(f"DamageCalculatorSV/Data/Image_data/pokemon/{name}", img)
 
-# ポップアップウィンドウ
-detail_window = tk.Toplevel(root)
-detail_window.overrideredirect(True)
-detail_window.withdraw()
-detail_label = tk.Label(detail_window, text="")
-detail_label.pack()
+def csv_():
+    def custom_sort_key(sublist):
+        num_part = re.search(r'(\d+)_(\d+)', str(sublist[1]))
+        if num_part:
+            # 数字_数字の形式の場合、2つの数字を比較
+            return (int(num_part.group(1)), int(num_part.group(2)))
+        else:
+            return (int(sublist[1]),)  # 数字_数字でない場合も整数に変換して比較
+    with open("DamageCalculatorSV\Data\pokedata.csv", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        data = [row for row in reader]
+    index = data.pop(0)
+    sorted_list = sorted(data, key=custom_sort_key)
 
-widget.bind("<Enter>", show_detail)  # マウスカーソルがウィジェットに入ったとき
-widget.bind("<Leave>", hide_detail)  # マウスカーソルがウィジェットから出たとき
 
-root.mainloop()
+    with open("DamageCalculatorSV/new_poke.csv", 'w', encoding='UTF-8') as f:
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(index)
+        for i, d in enumerate(sorted_list):
+            d[0] = i+1
+            writer.writerow(d)
 
+    
 
-# with open("DamageCalculatorSV\Data\MoveData.csv", encoding="utf-8") as f:
-#     reader = csv.reader(f)
-#     pokedata = [row for row in reader]
-# print(pokedata)
-# for data in pokedata:
-#     pp = data[-1]
-#     if pp != "pp":
-#         pp = int(data[-1])
-#         print(pp + pp*0.6)
-
-# for name in ["あめ", "すなあらし", "にほんばれ", "ゆき"]:
-#     image = Image.open(f"New_Pokemon/{name}.png")
-#     image = image.resize((100, 100))
-#     with open(f"New_Pokemon/Data/Image_data/misc/{name}", "wb") as f:
-#         pickle.dump(image, f)
-
-# with open("New_Pokemon\体重.txt", "r", encoding="utf-8") as f:
-#     data = f.readlines()
-#     data = data[0]
+csv_()
 
 # data = data.split("<tr class=")
 # data = [d.split("<td>") for d in data]

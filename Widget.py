@@ -368,22 +368,6 @@ class CustomImageLabel(tk.Label):
         self.image = self.create_method()
         self.config(image=self.image)
 
-
-# class CustomImageLabelPage3(tk.Label):
-#     def __init__(self, method: Callable=None):
-#         self.method = method
-
-#     def create(self, parent, method: Callable=None, mirror=False):
-#         self.mirror = mirror
-#         tk.Label.__init__(self, parent)
-#         self.image = Pr.ImageGenerator.create_page3()
-#         self.config(image=self.image)
-
-#     def update(self, name: str, item: str, terastal: str):
-#         self.image = Pr.ImageGenerator.create_page3(name, item, terastal, self.mirror)
-#         self.config(image=self.image)
-
-
 class StatusWidgets:
     class StatusWidget:
         class CustomLabel(tk.Label):
@@ -792,23 +776,26 @@ class BattleHPWidgets:
     def __init__(self, poke: Obj.PokeDetail, side: str, width: int):
         self.poke = poke
         self.side = side
-        self.max_result = self.BattleHPWidget(width, "特化")
-        self.min_result = self.BattleHPWidget(width, "無振")
-        self.calc_result = self.BattleHPWidget(width, "入力")
+        # self.max_result = self.BattleHPWidget(width, "特化")
+        # self.min_result = self.BattleHPWidget(width, "無振")
+        # self.calc_result = self.BattleHPWidget(width, "入力")
+        self.result = self.BattleHPWidget(width, "HP")
         self.hp_now_widget = CustomHPNowBox(self.poke.hp_now, self.poke.status_list[0].value, self.update)
 
     def create(self, parent):
-        self.max_result.create(parent)
-        self.max_result.pack()
-        self.min_result.create(parent)
-        self.min_result.pack()
-        self.calc_result.create(parent)
-        self.calc_result.pack()
+        self.result.create(parent)
+        # self.max_result.create(parent)
+        # self.max_result.pack()
+        # self.min_result.create(parent)
+        # self.min_result.pack()
+        # self.calc_result.create(parent)
+        # self.calc_result.pack()
 
-    def update(self, dmg: list[tuple[int | list[str]]]=[(0, 0, [""]), (0, 0, [""]), (0, 0, [""])]):
-        self.max_result.update(self.poke, dmg[0][0], dmg[0][1], dmg[0][2])
-        self.min_result.update(self.poke, dmg[1][0], dmg[1][1], dmg[1][2])
-        self.calc_result.update(self.poke, dmg[2][0], dmg[2][1], dmg[2][2])
+    def update(self, min: int=0, max: int=0, text: list[str]=[""]):
+        self.result.update(self.poke, min, max, text)
+        # self.max_result.update(self.poke, dmg[0][0], dmg[0][1], dmg[0][2])
+        # self.min_result.update(self.poke, dmg[1][0], dmg[1][1], dmg[1][2])
+        # self.calc_result.update(self.poke, dmg[2][0], dmg[2][1], dmg[2][2])
 
 
 class ImageWidget(tk.Label):
@@ -853,7 +840,6 @@ class CustomPopupWindow:
         if self.variable.get():
             self.window = tk.Toplevel()
             self.window.overrideredirect(True)
-            # self.window.geometry(f"+{event.x_root+10}+{event.y_root+10}")
             self.window.configure(bg="white")
             label = tk.Label(self.window, textvariable=self.variable, bg="white")
             label.pack(pady=5, padx=5)

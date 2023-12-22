@@ -211,13 +211,13 @@ class DamageCalculator:
             self.log.append("おいかぜ: 素早*2.0")
         speed = my_round5(spd * speed / 4096)
         if poke.bad_stat == "まひ":
-            if poke.ability != "はやあし":
-                speed = math.floor(speed / 2)
-                self.log.append("まひ: 素早*0.5")
-            else:
-                if not self.gas_check():
+            if poke.ability == "はやあし":
+                if self.gas_check():
                     speed = math.floor(speed / 2)
                     self.log.append("まひ: 素早*0.5")
+            else:
+                speed = math.floor(speed / 2)
+                self.log.append("まひ: 素早*0.5")
         return speed
 
     def poke_type_change(self):
@@ -360,10 +360,6 @@ class DamageCalculator:
         天候が影響するならTrue,しないならFalseを返す
         """
         if self.attacker.ability == "エアロック" or self.attacker.ability == "ノーてんき":
-            if self.gas_check():
-                return True
-            return False
-        elif self.target.ability == "エアロック" or self.target.ability == "ノーてんき":
             if self.gas_check():
                 return True
             return False
@@ -855,11 +851,11 @@ class DamageCalculator:
             return deff
 
         def type_effective(num):
-            if self.attacker.ability == "てきおうりょく" and self.gas_check():
+            if self.attacker.ability == "てきおうりょく" and not self.gas_check():
                 if self.attacker.terastal_flag and self.attacker.terastal == self.move_type:
                     num = my_round5(num * 9216 / 4096)
                     self.calc_log.insert(0, f"攻撃側: {self.attacker.ability}: テラスタル")
-                elif self.attacker_type == self.move_type:
+                elif self.move_type in self.attacker_type:
                     num = my_round5(num * 8192 / 4096)
                     self.calc_log.insert(0, f"攻撃側: {self.attacker.ability}")
             else:

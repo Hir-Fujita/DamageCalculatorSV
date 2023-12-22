@@ -143,6 +143,7 @@ class DoubleDamageCalculatorNote(ParentFrame):
         self.menu.add_command(label="    設定    ")
         self.menu.add_command(label=" あいことば ")
         self.menu.add_command(label="debug", command=lambda: self.widget_manager.damage_calc(tk.LEFT))
+        self.menu.add_command(label="PT検出Debug", command=lambda: self.manager.auto_enemy_detection("double"))
 
 class StatusCalculatorNote(ParentFrame):
     def __init__(self, note: ttk.Notebook, menu: tk.Menu, manager: Manager):

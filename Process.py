@@ -2,11 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import pickle
-from tkinter import filedialog
+import cv2
 import re
 from PIL import Image, ImageTk, ImageDraw, ImageOps, ImageFont, ImageFilter
 import Data
 import Object as Obj
+
+POKE = "poke"
+ITEM = "item"
+TERASTAL = "terastal"
 
 GREEN = (0, 196, 0)
 GREEN_2 = (164, 255, 164)
@@ -25,6 +29,59 @@ def open_file(path):
 def save_file(path, data):
     with open(path, "wb") as f:
         pickle.dump(data, f)
+
+def template_matching(src, temp, size=None):
+    if size:
+        ratio = size / 100
+        temp = cv2.resize(temp, None, fx=ratio, fy=ratio)
+    res = cv2.matchTemplate(src, temp, cv2.TM_CCOEFF_NORMED)
+    _, max_val, _, max_loc = cv2.minMaxLoc(res)
+    threshold = 0.8
+    if max_val >= threshold:
+        return True, max_loc
+    else:
+        return False, max_val
+
+class ImageManager:
+    def img_open(self, name: str, category: str, size: "tuple[int]"=None):
+        if category == POKE:
+            name = Data.POKEDATA.find(name, "name", "number")
+            parent = "pokemon"
+        elif category == ITEM:
+            parent = "item"
+        elif category == TERASTAL:
+            parent = "type"
+        image: Image.Image = open_file(f"{Data.FOLDER}/Data/Image_data/{parent}/{name}")
+        if size is not None:
+            if image.size[0] > size[0] or image.size[1] > size[1]:
+                image = image.resize((image.size[0]*2, image.size[1]*2))
+            image.thumbnail(size)
+        return image
+
+    def product(self, name: str) -> Image.Image:
+        num = re.sub(r"[^0-9]", "", name)
+        text_image = self.create_text(f"+{num}")
+        return text_image
+
+    def create_text(self, text: str, color: str="white", width=2) -> Image.Image:
+        text_image = Image.new("RGBA", (400, 400), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(text_image)
+        font = ImageFont.truetype(f"{Data.FOLDER}/Data/Corporate-Logo-Rounded-Bold-ver3.otf", 40)
+        draw.text((0, 0), text, fill=color, stroke_width=width, stroke_fill="black", font=font)
+        text_image = text_image.crop(text_image.split()[-1].getbbox())
+        return text_image
+
+
+class ImagePage1(ImageManager):
+    def __init__(self):
+        self.size = (200, 200)
+        self.bg = Image.new("RGBA", self.size, (0, 0, 0, 0))
+        self.name = ""
+        self.name_image: Image.Image = self.img_open(self.name, POKE)
+        self.item = ""
+        self.item_image: Image.Image = None
+        self.terastal = ""
+        self.terastal_image: Image.Image = None
 
 class ImageGenerator:
     def img_open(self, name: str, category: str, size: "tuple[int]"=None):

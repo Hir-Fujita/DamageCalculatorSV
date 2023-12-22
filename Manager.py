@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from typing import Callable
+import json
 
 import tkinter as tk
 import Object as Obj
 import Widget as Wid
 import Process as Pr
+import OBS
 import Data
 
 
@@ -14,8 +16,24 @@ class Manager:
     def __init__(self, master):
         self.master = master
         self.image_flag = True
+        self.OBS: OBS.OBS = None
         self.party = PartyManager("left")
         self.enemy = PartyManager("right")
+        self.load_setting()
+
+    def load_setting(self):
+        data = Data.open_json("setting.json")
+        self.OBS = OBS.OBS(data["OBS"])
+
+    def auto_enemy_detection(self, buttle_type: str):
+        index = Data.POKEDATA.key_index(buttle_type)
+        tier_list = list(set([data[index] for data in Data.POKEDATA.data]))
+        tier_list.sort()
+        matching_result = []
+        for teir in reversed(tier_list):
+            poke_list = [data[1] for data in Data.POKEDATA.data if data[index] == teir]
+            print(poke_list)
+
 
 class PartyManager:
     def __init__(self, side: str):

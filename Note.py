@@ -604,27 +604,31 @@ class Page5:
         bottom_frame = tk.Frame(parent)
         bottom_frame.pack()
         bottom_left_frame = tk.Frame(bottom_frame)
-        bottom_left_frame.pack(side=tk.LEFT, fill="both", expand=True)
+        bottom_left_frame.pack(side=tk.LEFT, fill="both", expand=True, padx=5, pady=10)
         self.create_player(bottom_left_frame, self.left, tk.LEFT)
 
         bottom_right_frame = tk.Frame(bottom_frame)
-        bottom_right_frame.pack(side=tk.RIGHT, fill="both", expand=True)
+        bottom_right_frame.pack(side=tk.RIGHT, fill="both", expand=True, padx=5, pady=10)
         self.create_player(bottom_right_frame, self.right, tk.RIGHT)
 
         self.field = Manager.FieldWidgetManager()
         bottom_center_frame = tk.LabelFrame(bottom_frame, text="状況")
-        bottom_center_frame.pack()
+        bottom_center_frame.pack(pady=5)
         b_frame_1 = tk.Frame(bottom_center_frame)
         b_frame_1.pack()
         self.field.double_widget.variable.set(True)
         weather_frame = tk.LabelFrame(b_frame_1, text="天候")
         weather_frame.pack(side=tk.LEFT, padx=5)
         self.field.weather_widget.create(weather_frame, width=12)
+        self.field.weather_widget.add_method(self.field.update)
         self.field.weather_widget.pack(side=tk.LEFT, padx=2, pady=2)
+        self.field.image_label.create(b_frame_1)
+        self.field.image_label.pack(side=tk.LEFT)
         field_frame = tk.LabelFrame(b_frame_1, text="フィールド")
         field_frame.pack(side=tk.LEFT, padx=5)
         self.field.field_widget.create(field_frame, width=12)
-        self.field.field_widget.pack(side=tk.LEFT, padx=2, pady=2)
+        self.field.field_widget.add_method(self.field.update)
+        self.field.field_widget.pack(side=tk.RIGHT, padx=2, pady=2)
         b_frame_2 = tk.Frame(bottom_center_frame)
         b_frame_2.pack()
         self.field.gravity_widget.create(b_frame_2, width=12)
@@ -719,13 +723,11 @@ class Page5:
         widget.wind_widget.create(parent, width=10)
         widget.help_widget.create(parent, width=10)
         widget.crit_widget.create(parent, width=10)
-        col = 0 if side == tk.LEFT else 1
-        widget.a_wall_widget.grid(row=0, column=col, padx=2, pady=2)
-        widget.c_wall_widget.grid(row=1, column=col, padx=2, pady=2)
-        widget.wind_widget.grid(row=2, column=col, padx=2, pady=2)
-        col = 2 if side == tk.LEFT else 0
-        widget.help_widget.grid(row=0, column=col, padx=2, pady=2)
-        widget.crit_widget.grid(row=1, column=col, padx=2, pady=2)
+        widget.a_wall_widget.pack(pady=2)
+        widget.c_wall_widget.pack(pady=2)
+        widget.wind_widget.pack(pady=2)
+        widget.help_widget.pack(pady=2)
+        widget.crit_widget.pack(pady=2)
 
     def update(self):
         self.damage_calc(tk.LEFT)
@@ -749,64 +751,43 @@ class Page5:
         attackers = self.left.pokemons if side == tk.LEFT else self.right.pokemons
         attacker_field = self.left.player.player if side == tk.LEFT else self.right.player.player
         targets = self.right.pokemons if side == tk.LEFT else self.left.pokemons
-        target_party = self.right.party_manager if side == tk.LEFT else self.left.party_manager
+        # target_party = self.right.party_manager if side == tk.LEFT else self.left.party_manager
         target_field = self.right.player.player if side == tk.LEFT else self.left.player.player
 
         for target_index, target in enumerate(targets):
             if target.poke.name.get():
-                target_result_text: list[list[str]] = [
-                    [f"無振:{target.poke.name.get()}: 現在HP{target.poke.hp_now.get()}"],
-                    [f"特化:{target.poke.name.get()}: 現在HP{target.poke.hp_now.get()}"],
-                    [f"入力:{target.poke.name.get()}: 現在HP{target.poke.hp_now.get()}"]
-                    ]
-                target_result_dmg: list[list[list[int]]] = [[[] for _ in range(16)] for _ in range(3)]
+                target_result_text: list[str] = [f"{target.poke.name.get()}: 現在HP{target.poke.hp_now.get()}"]
+                target_result_dmg: list[list[int]] = [[] for _ in range(16)]
                 for attacker_index, poke in enumerate(attackers):
                     if poke.poke.name.get():
                         field = self.field_check(side, attacker_index, target_index)
                         calc = Calc.DamageCalculator(poke.poke.get(), attacker_field.get(), target.poke.get(), target_field.get(), field)
-                        calc_max = Calc.DamageCalculator(poke.poke.get(), attacker_field.get(), target.poke.craete_any_stat(True), target_field.get(), field)
-                        calc_min = Calc.DamageCalculator(poke.poke.get(), attacker_field.get(), target.poke.craete_any_stat(), target_field.get(), field)
                         for index, calc_flag in enumerate(poke.poke.calc_list):
                             if calc_flag.get() and poke.poke.move_list[index].get():
                                 move_name = poke.poke.move_list[index].get()
-                                for index, _calc in enumerate([calc_max, calc_min, calc]):
-                                    _calc.calculation(move_name)
-                                    dmg_list = [_calc.final_calc(0.85 + i * 0.01) for i in range(16)]
-                                    target_result_text[index].append(f"{poke.poke.name.get()}: {move_name}")
-                                    [target_result_dmg[index][dmg_index].append(dmg) for dmg_index, dmg in enumerate(dmg_list)]
-                                    target_result_text[index].append(f"最低乱数 {' '.join(map(str, dmg_list))} 最高乱数")
-                                    [target_result_text[index].append(log) for log in _calc.log + _calc.calc_log]
-                                    target_result_text[index].append("------------------------------------------------------------")
-                target_result_dmg = [
-                    [sum(dmg_list) for dmg_list in target_result_dmg[0]],
-                    [sum(dmg_list) for dmg_list in target_result_dmg[1]],
-                    [sum(dmg_list) for dmg_list in target_result_dmg[2]]
-                ]
-                target.hp_widget.update(
-                    [(target_result_dmg[0][0], target_result_dmg[0][-1], target_result_text[0]),
-                    (target_result_dmg[1][0], target_result_dmg[1][-1], target_result_text[1]),
-                    (target_result_dmg[2][0], target_result_dmg[2][-1], target_result_text[2])]
-                )
-        field = self.field.field_data.get()
-        for widget_index, enemy in enumerate(target_party.list):
-            if enemy.name.get():
-                max_dmg, min_dmg = [], []
-                for poke in attackers:
-                    if poke.poke.name.get():
-                        if [status.effort.get() for status in enemy.status_list] == [0, 0, 0, 0, 0, 0]:
-                            max_calc = Calc.DamageCalculator(poke.poke.get(), attacker_field, enemy.craete_any_stat(), target_field, field)
-                            min_calc = Calc.DamageCalculator(poke.poke.get(), attacker_field, enemy.craete_any_stat(True), target_field, field)
-                        else:
-                            max_calc = Calc.DamageCalculator(poke.poke.get(), attacker_field, enemy.get(), target_field, field)
-                            min_calc = Calc.DamageCalculator(poke.poke.get(), attacker_field, enemy.get(), target_field, field)
-                        for index, calc_flag in enumerate(poke.poke.calc_list):
-                            if calc_flag.get() and poke.poke.move_list[index].get():
-                                move_name = poke.poke.move_list[index].get()
-                                max_calc.calculation(move_name)
-                                min_calc.calculation(move_name)
-                                max_dmg.append(max_calc.final_calc(1.00))
-                                min_dmg.append(min_calc.final_calc(0.85))
-                target_party.widget.buttons[widget_index].update((sum(min_dmg), sum(max_dmg)))
+                                calc.calculation(move_name)
+                                dmg_list = [calc.final_calc(0.85 + i * 0.01) for i in range(16)]
+                                target_result_text.append(f"{poke.poke.name.get()}: {move_name}")
+                                [target_result_dmg[dmg_index].append(dmg) for dmg_index, dmg in enumerate(dmg_list)]
+                                target_result_text.append(f"最低乱数 {' '.join(map(str, dmg_list))} 最高乱数")
+                                [target_result_text.append(log) for log in calc.log + calc.calc_log]
+                                target_result_text.append("------------------------------------------------------------")
+                target_result_dmg = [sum(dmg_list) for dmg_list in target_result_dmg]
+                target.hp_widget.update(target_result_dmg[0], target_result_dmg[-1], target_result_text)
+        # field = self.field.field_data.get()
+        # for widget_index, enemy in enumerate(target_party.list):
+        #     if enemy.name.get():
+        #         max_dmg, min_dmg = [], []
+        #         for poke in attackers:
+        #             if poke.poke.name.get():
+        #                 calc = Calc.DamageCalculator(poke.poke.get(), attacker_field, enemy.get(), target_field, field)
+        #                 for index, calc_flag in enumerate(poke.poke.calc_list):
+        #                     if calc_flag.get() and poke.poke.move_list[index].get():
+        #                         move_name = poke.poke.move_list[index].get()
+        #                         calc.calculation(move_name)
+        #                         max_dmg.append(calc.final_calc(1.00))
+        #                         min_dmg.append(calc.final_calc(0.85))
+        #         target_party.widget.buttons[widget_index].update((sum(min_dmg), sum(max_dmg)))
 
 
 
